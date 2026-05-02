@@ -1,8 +1,8 @@
 /* ── Design tokens ───────────────────────────────────────────────────────── */
 :root {
-  --navy:        #003366;
-  --navy-dark:   #002244;
-  --navy-light:  #004080;
+  --navy:        #1c5691;
+  --navy-dark:   #14406e;
+  --navy-light:  #2466a8;
   --white:       #FFFFFF;
   --bg:          #F8F9FA;
   --bg-alt:      #F0F2F5;
@@ -63,8 +63,6 @@ body {
 .app-main {
   flex: 1;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   padding: 40px 40px 60px;
   display: flex;
   flex-direction: column;
@@ -90,8 +88,7 @@ body {
 }
 
 .navbar-inner {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
   padding: 0 40px;
   height: 68px;
   display: flex;

@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
+import VerificationPage from './VerificationPage'
+import Dashboard from './Dashboard'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,11 +34,11 @@ function ScaleIcon() {
   )
 }
 
-function NavBar({ onUploadClick }) {
+function NavBar({ activeView, onNavigate }) {
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
       <div className="navbar-inner">
-        <div className="brand">
+        <div className="brand" role="button" tabIndex={0} onClick={() => onNavigate('upload')} onKeyDown={e => (e.key === 'Enter') && onNavigate('upload')} style={{ cursor: 'pointer' }}>
           <span className="brand-icon"><ScaleIcon /></span>
           <div className="brand-text">
             <span className="brand-name">AAROH</span>
@@ -44,8 +46,22 @@ function NavBar({ onUploadClick }) {
           </div>
         </div>
         <ul className="nav-links" role="list">
-          <li><button className="nav-link nav-link--active" onClick={onUploadClick}>Upload</button></li>
-          <li><span className="nav-link nav-link--disabled" aria-disabled="true">Dashboard</span></li>
+          <li>
+            <button
+              className={`nav-link ${activeView === 'upload' || activeView === 'verify' ? 'nav-link--active' : ''}`}
+              onClick={() => onNavigate('upload')}
+            >
+              Upload
+            </button>
+          </li>
+          <li>
+            <button
+              className={`nav-link ${activeView === 'dashboard' ? 'nav-link--active' : ''}`}
+              onClick={() => onNavigate('dashboard')}
+            >
+              Dashboard
+            </button>
+          </li>
           <li><span className="nav-link nav-link--disabled" aria-disabled="true">About</span></li>
         </ul>
       </div>
@@ -255,8 +271,15 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [result, setResult]   = useState(null)
+  const [pdfUrl, setPdfUrl]   = useState(null)
+  const [view,   setView]     = useState('upload')   // 'upload' | 'verify'
   const inputRef              = useRef(null)
   const resultsRef            = useRef(null)
+
+  // Revoke object URL when leaving verify view to free memory
+  useEffect(() => {
+    return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl) }
+  }, [pdfUrl])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -276,8 +299,11 @@ export default function App() {
 
       if (!res.ok || !json.success) throw new Error(json.error ?? `Server error ${res.status}`)
 
+      // Create object URL for the PDF viewer before switching views
+      const url = URL.createObjectURL(file)
+      setPdfUrl(url)
       setResult(json)
-      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+      setView('verify')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -285,13 +311,49 @@ export default function App() {
     }
   }
 
+  function handleReject() {
+    if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null) }
+    setResult(null)
+    setFile(null)
+    setError(null)
+    setView('upload')
+  }
+
+  function handleNavigate(target) {
+    if (target === 'upload' && view === 'verify') { handleReject(); return }
+    if (target === 'upload') { setView('upload'); return }
+    if (target === 'dashboard') { setView('dashboard') }
+  }
+
   const meta       = result?.data?.case_metadata
   const directions = result?.data?.directions ?? []
   const summary    = result?.summary
 
+  if (view === 'verify' && result) {
+    return (
+      <div className="app">
+        <NavBar activeView="verify" onNavigate={handleNavigate} />
+        <VerificationPage
+          pdfUrl={pdfUrl}
+          result={result}
+          onReject={handleReject}
+        />
+      </div>
+    )
+  }
+
+  if (view === 'dashboard') {
+    return (
+      <div className="app">
+        <NavBar activeView="dashboard" onNavigate={handleNavigate} />
+        <Dashboard />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
-      <NavBar onUploadClick={() => inputRef.current?.click()} />
+      <NavBar activeView="upload" onNavigate={handleNavigate} />
 
       <main className="app-main">
         <UploadSection
