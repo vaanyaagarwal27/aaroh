@@ -153,8 +153,8 @@ function MetadataBanner({ meta }) {
   const partiesStr = !meta.parties
     ? null
     : typeof meta.parties === 'string'
-      ? meta.parties
-      : [meta.parties?.petitioner, meta.parties?.respondent].filter(Boolean).join(' vs ') || JSON.stringify(meta.parties)
+      ? (meta.parties.length > 150 ? meta.parties.slice(0, 150).trimEnd() + '…' : meta.parties)
+      : [meta.parties?.petitioner, meta.parties?.respondent].filter(Boolean).join(' vs ') || null
 
   return (
     <div className="metadata-banner">
