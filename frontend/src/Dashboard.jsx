@@ -271,7 +271,156 @@ function saveSteps(id, checked) {
   return updatedAt
 }
 
-// ── Detail modal ──────────────────────────────────────────────────────────────
+// ── Case Details modal ────────────────────────────────────────────────────────
+
+const CD_CATEGORY = {
+  BINDING_TO_GOVT: { label: 'Binding to Govt', cls: 'cat--red'  },
+  TO_PETITIONER:   { label: 'To Petitioner',   cls: 'cat--blue' },
+  OBSERVATION:     { label: 'Observation',      cls: 'cat--gray' },
+}
+const CD_CONF_LABEL = { HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }
+
+function CaseDetailsModal({ cas, onClose }) {
+  const meta    = cas.case_metadata ?? {}
+  const dirs    = cas.directions    ?? []
+  const summary = cas.summary       ?? {}
+  const isFinal = meta.order_type === 'FINAL_DISPOSAL'
+
+  const totalDirs  = summary.total_directions ?? dirs.length
+  const bindingCnt = summary.binding_to_govt  ?? dirs.filter(d => d.category === 'BINDING_TO_GOVT').length
+  const petCnt     = summary.to_petitioner    ?? dirs.filter(d => d.category === 'TO_PETITIONER').length
+  const obsCnt     = summary.observations     ?? dirs.filter(d => d.category === 'OBSERVATION').length
+
+  return (
+    <div
+      className="detail-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Case details"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="detail-modal">
+
+        {/* Header */}
+        <div className="detail-modal-header">
+          <div>
+            <p className="detail-modal-label">Case Details</p>
+            <p className="detail-modal-case">{meta.case_number ?? '—'}</p>
+            <p className="detail-modal-court">{meta.court_name}</p>
+          </div>
+          <div className="detail-modal-header-right">
+            <span className={`order-badge order-badge--${isFinal ? 'final' : 'interim'}`}>
+              {isFinal ? 'Final Disposal' : 'Interim'}
+            </span>
+            <button className="detail-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+        </div>
+
+        <div className="detail-modal-body">
+
+          {/* Stats */}
+          <div className="cd-stats">
+            <div className="cd-stat">
+              <span className="cd-stat-num">{totalDirs}</span>
+              <span className="cd-stat-label">Total Directions</span>
+            </div>
+            <div className="cd-stat cd-stat--red">
+              <span className="cd-stat-num">{bindingCnt}</span>
+              <span className="cd-stat-label">Binding to Govt</span>
+            </div>
+            <div className="cd-stat cd-stat--blue">
+              <span className="cd-stat-num">{petCnt}</span>
+              <span className="cd-stat-label">To Petitioner</span>
+            </div>
+            <div className="cd-stat cd-stat--gray">
+              <span className="cd-stat-num">{obsCnt}</span>
+              <span className="cd-stat-label">Observations</span>
+            </div>
+          </div>
+
+          {/* Directions */}
+          {dirs.length > 0 && (
+            <div className="dm-section">
+              <h3 className="dm-section-title">Extracted Directions</h3>
+              <div className="cd-dirs">
+                {dirs.map((d, i) => {
+                  const cat  = CD_CATEGORY[d.category] ?? { label: d.category, cls: 'cat--gray' }
+                  const confKey = String(d.confidence_score ?? '').toUpperCase()
+                  const confCls = CONF_CLS[confKey] ?? 'conf--low'
+                  return (
+                    <div key={i} className={`cd-dir-card ${cat.cls}`}>
+                      <div className="cd-dir-header">
+                        <span className="cd-dir-num">#{i + 1}</span>
+                        <span className={`cat-badge ${cat.cls}`}>{cat.label}</span>
+                        <span className={`conf-badge ${confCls}`}>{CD_CONF_LABEL[confKey] ?? 'Low'}</span>
+                      </div>
+                      <p className="cd-dir-text">{d.verbatim_text}</p>
+                      {(d.responsible_entity || d.original_timeline) && (
+                        <div className="cd-dir-footer">
+                          {d.responsible_entity && (
+                            <span className="cd-dir-meta">
+                              <span className="cd-dir-meta-label">Entity</span>{d.responsible_entity}
+                            </span>
+                          )}
+                          {d.original_timeline && (
+                            <span className="cd-dir-meta">
+                              <span className="cd-dir-meta-label">Timeline</span>{d.original_timeline}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Edit History */}
+          {cas.edits?.length > 0 && (
+            <div className="dm-section detail-edit-history">
+              <h3 className="dm-section-title">
+                Edit History ({cas.edits.length} change{cas.edits.length > 1 ? 's' : ''})
+              </h3>
+              {cas.edits.map((e, i) => (
+                <div key={i} className="detail-edit-card">
+                  {e.changes?.map((ch, j) => (
+                    <div key={j} className="detail-edit-change">
+                      {ch.field && <p className="detail-edit-change-field">{ch.field}</p>}
+                      <div className="detail-edit-block detail-edit-block--old">
+                        <span className="detail-edit-block-label">OLD TEXT</span>
+                        <p className="detail-edit-block-text">{ch.original || '—'}</p>
+                      </div>
+                      <div className="detail-edit-block detail-edit-block--new">
+                        <span className="detail-edit-block-label">NEW TEXT</span>
+                        <p className="detail-edit-block-text">{ch.updated || '—'}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="detail-edit-footer">
+                    <span><span className="detail-edit-footer-label">Changed by:</span> {e.edited_by}</span>
+                    <span className="detail-edit-footer-sep">|</span>
+                    <span><span className="detail-edit-footer-label">Reason:</span> {e.reason}</span>
+                    <span className="detail-edit-footer-sep">|</span>
+                    <span className="detail-edit-footer-time">{e.edited_at}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Verification stamp */}
+          {cas.verification_stamp && (
+            <p className="detail-stamp">{cas.verification_stamp}</p>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Action Center modal ───────────────────────────────────────────────────────
 
 function DetailModal({ cas, onClose, onStatusChange }) {
   const meta = cas.case_metadata ?? {}
@@ -339,7 +488,7 @@ function DetailModal({ cas, onClose, onStatusChange }) {
             <span className={`order-badge order-badge--${isFinal ? 'final' : 'interim'}`}>
               {isFinal ? 'Final Disposal' : 'Interim'}
             </span>
-            {isInterim && <span className="urgent-badge">🔴 URGENT</span>}
+            {isInterim && <span className="urgent-badge">URGENT</span>}
             <button className="detail-modal-close" onClick={onClose} aria-label="Close">✕</button>
           </div>
         </div>
@@ -481,42 +630,7 @@ function DetailModal({ cas, onClose, onStatusChange }) {
             </ol>
           </div>
 
-          {/* ── 4. Edit History ── */}
-          {cas.edits?.length > 0 && (
-            <div className="dm-section detail-edit-history">
-              <h3 className="dm-section-title">
-                Edit History ({cas.edits.length} change{cas.edits.length > 1 ? 's' : ''})
-              </h3>
-              {cas.edits.map((e, i) => (
-                <div key={i} className="detail-edit-card">
-                  {e.changes?.map((ch, j) => (
-                    <div key={j} className="detail-edit-change">
-                      {ch.field && (
-                        <p className="detail-edit-change-field">{ch.field}</p>
-                      )}
-                      <div className="detail-edit-block detail-edit-block--old">
-                        <span className="detail-edit-block-label">OLD TEXT</span>
-                        <p className="detail-edit-block-text">{ch.original || '—'}</p>
-                      </div>
-                      <div className="detail-edit-block detail-edit-block--new">
-                        <span className="detail-edit-block-label">NEW TEXT</span>
-                        <p className="detail-edit-block-text">{ch.updated || '—'}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="detail-edit-footer">
-                    <span><span className="detail-edit-footer-label">Changed by:</span> {e.edited_by}</span>
-                    <span className="detail-edit-footer-sep">|</span>
-                    <span><span className="detail-edit-footer-label">Reason:</span> {e.reason}</span>
-                    <span className="detail-edit-footer-sep">|</span>
-                    <span className="detail-edit-footer-time">{e.edited_at}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── 5. Change Status ── */}
+          {/* ── 4. Change Status ── */}
           <div className="dm-section dm-status-section">
             <h3 className="dm-section-title">Change Status</h3>
             <div className="dm-status-row">
@@ -544,19 +658,21 @@ function DetailModal({ cas, onClose, onStatusChange }) {
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [cases,         setCases]         = useState(loadAllCases)
-  const [search,        setSearch]        = useState('')
-  const [statusFilter,  setStatusFilter]  = useState('All')
-  const [interimOnly,   setInterimOnly]   = useState(false)
-  const [detailCase,    setDetailCase]    = useState(null)
-  const [sortUrgency,   setSortUrgency]   = useState(false)
-  const [deleteToast,   setDeleteToast]   = useState(null)
+  const [cases,           setCases]           = useState(loadAllCases)
+  const [search,          setSearch]          = useState('')
+  const [statusFilter,    setStatusFilter]    = useState('All')
+  const [interimOnly,     setInterimOnly]     = useState(false)
+  const [caseDetailsCase, setCaseDetailsCase] = useState(null)  // Case Details modal
+  const [actionCase,      setActionCase]      = useState(null)  // Action Center modal
+  const [sortUrgency,     setSortUrgency]     = useState(false)
+  const [deleteToast,     setDeleteToast]     = useState(null)
 
   function handleStatusChange(id, newStatus) {
     const target = cases.find(c => c.id === id)
     if (target?._isSample) saveSampleStatus(id, newStatus)
     else saveStatusForReal(id, newStatus)
     setCases(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c))
+    setActionCase(prev => prev?.id === id ? { ...prev, status: newStatus } : prev)
   }
 
   function handleDelete(id) {
@@ -600,7 +716,8 @@ export default function Dashboard() {
 
   return (
     <>
-      {detailCase && <DetailModal cas={detailCase} onClose={() => setDetailCase(null)} onStatusChange={handleStatusChange} />}
+      {caseDetailsCase && <CaseDetailsModal cas={caseDetailsCase} onClose={() => setCaseDetailsCase(null)} />}
+      {actionCase && <DetailModal cas={actionCase} onClose={() => setActionCase(null)} onStatusChange={handleStatusChange} />}
       {deleteToast && <div className="delete-toast" role="status">{deleteToast}</div>}
 
       <div className="dashboard">
@@ -617,7 +734,7 @@ export default function Dashboard() {
             </span>
             {interimCount > 0 && (
               <span className="dash-stat-chip dash-stat-chip--interim">
-                🔴 {interimCount} Interim Order{interimCount > 1 ? 's' : ''}
+                {interimCount} Interim Order{interimCount > 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -665,13 +782,13 @@ export default function Dashboard() {
               onChange={e => setInterimOnly(e.target.checked)}
               aria-label="Show interim orders only"
             />
-            🔴 Interim Orders Only
+            Interim Orders Only
           </label>
         </div>
 
         {interimOnly && (
           <div className="interim-alert" role="status">
-            🔴 <strong>{filtered.length} Interim Order{filtered.length !== 1 ? 's' : ''}</strong> Requiring Immediate Action
+            <strong>{filtered.length} Interim Order{filtered.length !== 1 ? 's' : ''}</strong> requiring immediate action
           </div>
         )}
 
@@ -711,16 +828,16 @@ export default function Dashboard() {
                         <div className="case-num-top">
                           <button
                             className="case-num-btn"
-                            onClick={() => setDetailCase(cas)}
+                            onClick={() => setCaseDetailsCase(cas)}
                           >
                             {meta.case_number ?? '—'}
                           </button>
-                          {isInterim && <span className="urgent-badge">🔴 URGENT</span>}
+                          {isInterim && <span className="urgent-badge">URGENT</span>}
                         </div>
                         {cas.edits?.length > 0 && (
                           <button
                             className="edits-badge"
-                            onClick={() => setDetailCase(cas)}
+                            onClick={() => setCaseDetailsCase(cas)}
                             title="View edit history"
                             aria-label={`${cas.edits.length} edit${cas.edits.length > 1 ? 's' : ''} made`}
                           >
@@ -759,10 +876,10 @@ export default function Dashboard() {
                       <div className="action-cell">
                         <button
                           className="view-btn"
-                          onClick={() => setDetailCase(cas)}
-                          aria-label={`View details for ${meta.case_number}`}
+                          onClick={() => setActionCase(cas)}
+                          aria-label={`Open action center for ${meta.case_number}`}
                         >
-                          View Details
+                          Action Center
                         </button>
                         {!cas._isSample && (
                           <button

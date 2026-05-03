@@ -326,7 +326,7 @@ function ActionPlan({ meta, directions, assignedDept, onDeptChange }) {
             </div>
           </div>
           <span className={`ap-priority ${priorityCls}`}>
-            {priority === 'HIGH' ? '🔴' : priority === 'MEDIUM' ? '🟡' : '🟢'} {priority} PRIORITY
+            {priority} PRIORITY
           </span>
         </div>
 
