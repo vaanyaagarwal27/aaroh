@@ -327,11 +327,18 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
       return 'LOW'
     })()
 
+    const currentUser = (() => {
+      try { return JSON.parse(localStorage.getItem('aaroh_user')) ?? null } catch { return null }
+    })()
+    const verifiedByLabel = currentUser
+      ? `${currentUser.name} (${currentUser.role})`
+      : 'System (Pre-login data)'
+
     const record = {
       id:                 `case_${Date.now()}`,
       verified_at:        now.toISOString(),
-      verified_by:        'Deputy Commissioner',
-      verification_stamp: `Verified by Deputy Commissioner on ${dateStr} at ${timeStr}`,
+      verified_by:        verifiedByLabel,
+      verification_stamp: `Verified by ${verifiedByLabel} on ${dateStr} at ${timeStr}`,
       case_metadata:      meta,
       directions,
       summary:            liveSummary,

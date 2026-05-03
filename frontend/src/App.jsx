@@ -4,6 +4,11 @@ import VerificationPage from './VerificationPage'
 import Dashboard from './Dashboard'
 import AboutPage from './AboutPage'
 import Footer from './Footer'
+import LoginPage from './LoginPage'
+
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem('aaroh_user')) ?? null } catch { return null }
+}
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -36,7 +41,7 @@ function ScaleIcon() {
   )
 }
 
-function NavBar({ activeView, onNavigate }) {
+function NavBar({ activeView, onNavigate, user, onLogout }) {
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
       <div className="navbar-inner">
@@ -73,6 +78,15 @@ function NavBar({ activeView, onNavigate }) {
             </button>
           </li>
         </ul>
+        {user && (
+          <div className="navbar-user">
+            <span className="navbar-user-info">
+              👤 <strong>{user.name}</strong>
+              <span className="navbar-user-role">{user.role}</span>
+            </span>
+            <button className="navbar-logout-btn" onClick={onLogout}>Logout</button>
+          </div>
+        )}
       </div>
     </nav>
   )
@@ -295,17 +309,31 @@ function loadPending() {
 }
 
 export default function App() {
+  const [user,            setUser]            = useState(loadUser)
   const [file,            setFile]            = useState(null)
   const [loading,         setLoading]         = useState(false)
   const [error,           setError]           = useState(null)
   const [result,          setResult]          = useState(null)
   const [pendingFileName, setPendingFileName] = useState(null)
   const [pdfUrl,          setPdfUrl]          = useState(null)
-  const [view,            setView]            = useState('upload')
+  const [view,            setView]            = useState(() => loadUser() ? 'upload' : 'login')
   const inputRef = useRef(null)
+
+  function handleLogin(userData) {
+    localStorage.setItem('aaroh_user', JSON.stringify(userData))
+    setUser(userData)
+    setView('upload')
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('aaroh_user')
+    setUser(null)
+    setView('login')
+  }
 
   // On mount: restore any pending extraction so Approve/Reject are always reachable
   useEffect(() => {
+    if (!loadUser()) return  // don't restore if not logged in
     const pending = loadPending()
     if (pending?.extractedData) {
       setResult(pending.extractedData)
@@ -376,10 +404,14 @@ export default function App() {
     if (target === 'about') { setView('about') }
   }
 
+  if (!user || view === 'login') {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
   if (view === 'verify' && result) {
     return (
       <div className="app">
-        <NavBar activeView="verify" onNavigate={handleNavigate} />
+        <NavBar activeView="verify" onNavigate={handleNavigate} user={user} onLogout={handleLogout} />
         <VerificationPage
           pdfUrl={pdfUrl}
           result={result}
@@ -399,7 +431,7 @@ export default function App() {
   if (view === 'dashboard') {
     return (
       <div className="app">
-        <NavBar activeView="dashboard" onNavigate={handleNavigate} />
+        <NavBar activeView="dashboard" onNavigate={handleNavigate} user={user} onLogout={handleLogout} />
         <Dashboard />
         <Footer />
       </div>
@@ -409,7 +441,7 @@ export default function App() {
   if (view === 'about') {
     return (
       <div className="app">
-        <NavBar activeView="about" onNavigate={handleNavigate} />
+        <NavBar activeView="about" onNavigate={handleNavigate} user={user} onLogout={handleLogout} />
         <AboutPage />
         <Footer />
       </div>
@@ -418,7 +450,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <NavBar activeView="upload" onNavigate={handleNavigate} />
+      <NavBar activeView="upload" onNavigate={handleNavigate} user={user} onLogout={handleLogout} />
 
       {result && (
         <div className="pending-banner" role="alert">

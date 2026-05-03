@@ -10,7 +10,7 @@ const SAMPLE_CASES = [
   {
     id: 'sample_1',
     verified_at: daysAgo(2),
-    verification_stamp: 'Verified by Deputy Commissioner on 01 May 2026 at 10:30 AM',
+    verification_stamp: 'Verified by System (Pre-login data) on 01 May 2026 at 10:30 AM',
     case_metadata: {
       case_number: 'WP/8234/2024',
       court_name:  'High Court of Karnataka',
@@ -30,7 +30,7 @@ const SAMPLE_CASES = [
   {
     id: 'sample_2',
     verified_at: daysAgo(5),
-    verification_stamp: 'Verified by Deputy Commissioner on 28 Apr 2026 at 03:15 PM',
+    verification_stamp: 'Verified by System (Pre-login data) on 28 Apr 2026 at 03:15 PM',
     case_metadata: {
       case_number: 'WP/9871/2024',
       court_name:  'High Court of Karnataka',
@@ -49,7 +49,7 @@ const SAMPLE_CASES = [
   {
     id: 'sample_3',
     verified_at: daysAgo(7),
-    verification_stamp: 'Verified by Deputy Commissioner on 26 Apr 2026 at 11:00 AM',
+    verification_stamp: 'Verified by System (Pre-login data) on 26 Apr 2026 at 11:00 AM',
     case_metadata: {
       case_number: 'CRL.P/4521/2024',
       court_name:  'High Court of Karnataka',
@@ -67,7 +67,7 @@ const SAMPLE_CASES = [
   {
     id: 'sample_4',
     verified_at: daysAgo(1),
-    verification_stamp: 'Verified by Deputy Commissioner on 02 May 2026 at 09:45 AM',
+    verification_stamp: 'Verified by System (Pre-login data) on 02 May 2026 at 09:45 AM',
     case_metadata: {
       case_number: 'WP/12456/2024',
       court_name:  'High Court of Karnataka',
@@ -599,7 +599,12 @@ function CaseDetailsModal({ cas, onClose }) {
 
           {/* Verification stamp */}
           {cas.verification_stamp && (
-            <p className="detail-stamp">{cas.verification_stamp}</p>
+            <p className="detail-stamp">
+              {cas.verification_stamp.replace(
+                'Verified by Deputy Commissioner',
+                'Verified by System (Pre-login data)'
+              )}
+            </p>
           )}
 
         </div>
