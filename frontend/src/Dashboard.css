@@ -216,6 +216,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
+  cursor: default;
 }
 .col-num   { text-align: center; }
 

@@ -1125,7 +1125,7 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="col-date">{meta.order_date ?? '—'}</td>
-                    <td className="col-court">{meta.court_name ?? '—'}</td>
+                    <td className="col-court" title={meta.court_name ?? ''}>{meta.court_name ?? '—'}</td>
                     <td>
                       <span className={`order-badge order-badge--${isFinal ? 'final' : 'interim'}`}>
                         {isFinal ? 'Final Disposal' : 'Interim'}
