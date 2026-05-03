@@ -149,6 +149,11 @@ const STATUS_CLS = {
   'Completed':   'status--done',
 }
 
+const CATEGORY_OPTIONS = [
+  { value: 'BINDING_TO_GOVT', label: 'Binding to Govt' },
+  { value: 'TO_PETITIONER',   label: 'To Petitioner'   },
+  { value: 'OBSERVATION',     label: 'Observation'     },
+]
 const CATEGORY_CLS = {
   BINDING_TO_GOVT: 'cat--red',
   TO_PETITIONER:   'cat--blue',
@@ -278,6 +283,210 @@ function saveSteps(id, checked) {
   return updatedAt
 }
 
+// ── Edit Direction Card ───────────────────────────────────────────────────────
+
+function EditDirectionCard({ dir, index, onChange }) {
+  const [editing,  setEditing]  = useState(false)
+  const [draft,    setDraft]    = useState(null)
+  const [reason,   setReason]   = useState('')
+  const [editedBy, setEditedBy] = useState('')
+  const [errors,   setErrors]   = useState({})
+
+  function startEdit() { setDraft({ ...dir }); setReason(''); setEditedBy(''); setErrors({}); setEditing(true) }
+  function cancelEdit() { setDraft(null); setReason(''); setEditedBy(''); setErrors({}); setEditing(false) }
+
+  function saveEdit() {
+    const errs = {}
+    if (!reason.trim())   errs.reason   = 'Required'
+    if (!editedBy.trim()) errs.editedBy = 'Required'
+    if (Object.keys(errs).length) { setErrors(errs); return }
+
+    const editedAt = new Date().toLocaleString('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    })
+    const changes = []
+    if (dir.verbatim_text !== draft.verbatim_text)
+      changes.push({ field: 'text',     original: dir.verbatim_text,    updated: draft.verbatim_text })
+    if (dir.category !== draft.category)
+      changes.push({ field: 'category', original: dir.category,         updated: draft.category })
+    if ((dir.responsible_entity ?? '') !== (draft.responsible_entity ?? ''))
+      changes.push({ field: 'entity',   original: dir.responsible_entity, updated: draft.responsible_entity })
+    if ((dir.original_timeline ?? '') !== (draft.original_timeline ?? ''))
+      changes.push({ field: 'timeline', original: dir.original_timeline,  updated: draft.original_timeline })
+
+    onChange(index, draft, {
+      field:     `Direction #${index + 1}`,
+      changes,
+      reason:    reason.trim(),
+      edited_by: editedBy.trim(),
+      edited_at: editedAt,
+    })
+    setEditing(false); setDraft(null); setReason(''); setEditedBy(''); setErrors({})
+  }
+
+  const current = editing ? draft : dir
+  const catCls  = CATEGORY_CLS[current.category]  ?? 'cat--gray'
+  const catConf = CONF_CLS[String(current.confidence_score ?? '').toUpperCase()] ?? 'conf--low'
+
+  return (
+    <div className={`edc-card ${catCls} ${editing ? 'edc-card--editing' : ''}`}>
+      <div className="edc-header">
+        <span className="edc-index">#{index + 1}</span>
+        {editing ? (
+          <select
+            className="edc-cat-select"
+            value={draft.category}
+            onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
+          >
+            {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        ) : (
+          <span className={`cat-badge ${catCls}`}>{CATEGORY_LABEL[current.category] ?? current.category}</span>
+        )}
+        <span className={`conf-badge ${catConf}`}>{String(current.confidence_score ?? 'Low')}</span>
+        <div className="edc-btns">
+          {editing ? (
+            <>
+              <button className="edc-btn edc-btn--save"   onClick={saveEdit}>Save</button>
+              <button className="edc-btn edc-btn--cancel" onClick={cancelEdit}>Cancel</button>
+            </>
+          ) : (
+            <button className="edc-btn edc-btn--edit" onClick={startEdit}>Edit</button>
+          )}
+        </div>
+      </div>
+
+      {editing ? (
+        <textarea
+          className="edc-textarea"
+          value={draft.verbatim_text}
+          onChange={e => setDraft(d => ({ ...d, verbatim_text: e.target.value }))}
+          rows={4}
+          autoFocus
+        />
+      ) : (
+        <p className="edc-text">{current.verbatim_text}</p>
+      )}
+
+      <div className="edc-footer">
+        <div className="edc-field">
+          <span className="edc-field-label">Entity</span>
+          {editing ? (
+            <input className="edc-input" type="text" value={draft.responsible_entity ?? ''} onChange={e => setDraft(d => ({ ...d, responsible_entity: e.target.value }))} placeholder="Responsible entity" />
+          ) : (
+            <span className="edc-field-value">{current.responsible_entity || '—'}</span>
+          )}
+        </div>
+        <div className="edc-field">
+          <span className="edc-field-label">Timeline</span>
+          {editing ? (
+            <input className="edc-input" type="text" value={draft.original_timeline ?? ''} onChange={e => setDraft(d => ({ ...d, original_timeline: e.target.value }))} placeholder="e.g. 4 weeks" />
+          ) : (
+            <span className="edc-field-value">{current.original_timeline || '—'}</span>
+          )}
+        </div>
+      </div>
+
+      {editing && (
+        <div className="edc-audit">
+          <div className="edc-audit-field">
+            <label className="edc-audit-label">Reason for change <span className="edc-required">*</span></label>
+            <input
+              className={`edc-input ${errors.reason ? 'edc-input--error' : ''}`}
+              type="text"
+              value={reason}
+              onChange={e => { setReason(e.target.value); setErrors(er => ({ ...er, reason: '' })) }}
+              placeholder="Why are you making this change?"
+            />
+            {errors.reason && <span className="edc-error">{errors.reason}</span>}
+          </div>
+          <div className="edc-audit-field">
+            <label className="edc-audit-label">Your name / designation <span className="edc-required">*</span></label>
+            <input
+              className={`edc-input ${errors.editedBy ? 'edc-input--error' : ''}`}
+              type="text"
+              value={editedBy}
+              onChange={e => { setEditedBy(e.target.value); setErrors(er => ({ ...er, editedBy: '' })) }}
+              placeholder="e.g. Dy. Commissioner Sharma"
+            />
+            {errors.editedBy && <span className="edc-error">{errors.editedBy}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Edit Case Modal ───────────────────────────────────────────────────────────
+
+function EditCaseModal({ cas, onClose, onSave }) {
+  const meta = cas.case_metadata ?? {}
+  const [localDirs,  setLocalDirs]  = useState(cas.directions ?? [])
+  const [localEdits, setLocalEdits] = useState(cas.edits ?? [])
+
+  function handleDirChange(index, updated, editRecord) {
+    setLocalDirs(prev => prev.map((d, i) => i === index ? { ...d, ...updated } : d))
+    if (editRecord) setLocalEdits(prev => [...prev, editRecord])
+  }
+
+  function handleSave() {
+    const liveSummary = {
+      total_directions: localDirs.length,
+      binding_to_govt:  localDirs.filter(d => d.category === 'BINDING_TO_GOVT').length,
+      to_petitioner:    localDirs.filter(d => d.category === 'TO_PETITIONER').length,
+      observations:     localDirs.filter(d => d.category === 'OBSERVATION').length,
+    }
+    onSave({ ...cas, directions: localDirs, edits: localEdits, summary: liveSummary })
+  }
+
+  const isFinal = meta.order_type === 'FINAL_DISPOSAL'
+
+  return (
+    <div
+      className="detail-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit case"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="detail-modal detail-modal--wide">
+
+        <div className="detail-modal-header">
+          <div>
+            <p className="detail-modal-label">Edit Directions</p>
+            <p className="detail-modal-case">{meta.case_number ?? '—'}</p>
+            <p className="detail-modal-court">{meta.court_name}</p>
+          </div>
+          <div className="detail-modal-header-right">
+            <span className={`order-badge order-badge--${isFinal ? 'final' : 'interim'}`}>
+              {isFinal ? 'Final Disposal' : 'Interim'}
+            </span>
+            <button className="detail-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+        </div>
+
+        <div className="detail-modal-body">
+          <p className="edc-intro">
+            Edits require a reason and your name. All changes are logged in the audit trail.
+          </p>
+          <div className="edc-list">
+            {localDirs.map((d, i) => (
+              <EditDirectionCard key={i} dir={d} index={i} onChange={handleDirChange} />
+            ))}
+          </div>
+        </div>
+
+        <div className="edc-modal-footer">
+          <button className="edc-cancel-btn" onClick={onClose}>Discard</button>
+          <button className="edc-save-btn" onClick={handleSave}>Save All Changes</button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── Case Details modal ────────────────────────────────────────────────────────
 
 const CD_CATEGORY = {
@@ -383,44 +592,69 @@ function CaseDetailsModal({ cas, onClose }) {
             </div>
           )}
 
-          {/* Edit History */}
-          {cas.edits?.length > 0 && (
-            <div className="dm-section detail-edit-history">
-              <h3 className="dm-section-title">
-                Edit History ({cas.edits.length} change{cas.edits.length > 1 ? 's' : ''})
-              </h3>
-              {cas.edits.map((e, i) => (
-                <div key={i} className="detail-edit-card">
-                  {e.changes?.map((ch, j) => (
-                    <div key={j} className="detail-edit-change">
-                      {ch.field && <p className="detail-edit-change-field">{ch.field}</p>}
-                      <div className="detail-edit-block detail-edit-block--old">
-                        <span className="detail-edit-block-label">OLD TEXT</span>
-                        <p className="detail-edit-block-text">{ch.original || '—'}</p>
-                      </div>
-                      <div className="detail-edit-block detail-edit-block--new">
-                        <span className="detail-edit-block-label">NEW TEXT</span>
-                        <p className="detail-edit-block-text">{ch.updated || '—'}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="detail-edit-footer">
-                    <span><span className="detail-edit-footer-label">Changed by:</span> {e.edited_by}</span>
-                    <span className="detail-edit-footer-sep">|</span>
-                    <span><span className="detail-edit-footer-label">Reason:</span> {e.reason}</span>
-                    <span className="detail-edit-footer-sep">|</span>
-                    <span className="detail-edit-footer-time">{e.edited_at}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Verification stamp */}
           {cas.verification_stamp && (
             <p className="detail-stamp">{cas.verification_stamp}</p>
           )}
 
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Edit History modal ────────────────────────────────────────────────────────
+
+function EditHistoryModal({ cas, onClose }) {
+  const edits = cas.edits ?? []
+  return (
+    <div
+      className="detail-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit history"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="detail-modal">
+        <div className="detail-modal-header">
+          <div>
+            <p className="detail-modal-label">Edit History</p>
+            <p className="detail-modal-case">{cas.case_metadata?.case_number ?? '—'}</p>
+          </div>
+          <div className="detail-modal-header-right">
+            <button className="detail-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+        </div>
+        <div className="detail-modal-body">
+          <div className="dm-section detail-edit-history">
+            <h3 className="dm-section-title">
+              Edit History ({edits.length} change{edits.length !== 1 ? 's' : ''})
+            </h3>
+            {edits.map((e, i) => (
+              <div key={i} className="detail-edit-card">
+                {e.changes?.map((ch, j) => (
+                  <div key={j} className="detail-edit-change">
+                    {ch.field && <p className="detail-edit-change-field">{ch.field}</p>}
+                    <div className="detail-edit-block detail-edit-block--old">
+                      <span className="detail-edit-block-label">OLD TEXT</span>
+                      <p className="detail-edit-block-text">{ch.original || '—'}</p>
+                    </div>
+                    <div className="detail-edit-block detail-edit-block--new">
+                      <span className="detail-edit-block-label">NEW TEXT</span>
+                      <p className="detail-edit-block-text">{ch.updated || '—'}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="detail-edit-footer">
+                  <span><span className="detail-edit-footer-label">Changed by:</span> {e.edited_by}</span>
+                  <span className="detail-edit-footer-sep">|</span>
+                  <span><span className="detail-edit-footer-label">Reason:</span> {e.reason}</span>
+                  <span className="detail-edit-footer-sep">|</span>
+                  <span className="detail-edit-footer-time">{e.edited_at}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -673,14 +907,16 @@ function DetailModal({ cas, onClose, onStatusChange }) {
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [cases,           setCases]           = useState(loadAllCases)
-  const [search,          setSearch]          = useState('')
-  const [statusFilter,    setStatusFilter]    = useState('All')
-  const [interimOnly,     setInterimOnly]     = useState(false)
-  const [caseDetailsCase, setCaseDetailsCase] = useState(null)  // Case Details modal
-  const [actionCase,      setActionCase]      = useState(null)  // Action Center modal
-  const [sortUrgency,     setSortUrgency]     = useState(false)
-  const [deleteToast,     setDeleteToast]     = useState(null)
+  const [cases,            setCases]            = useState(loadAllCases)
+  const [search,           setSearch]           = useState('')
+  const [statusFilter,     setStatusFilter]     = useState('All')
+  const [interimOnly,      setInterimOnly]      = useState(false)
+  const [caseDetailsCase,  setCaseDetailsCase]  = useState(null)  // Case Details modal (read-only)
+  const [editHistoryCase,  setEditHistoryCase]  = useState(null)  // Edit History modal
+  const [actionCase,       setActionCase]       = useState(null)  // Action Center modal
+  const [editCase,         setEditCase]         = useState(null)  // Edit Directions modal
+  const [sortUrgency,      setSortUrgency]      = useState(false)
+  const [deleteToast,      setDeleteToast]      = useState(null)
 
   function handleStatusChange(id, newStatus) {
     const target = cases.find(c => c.id === id)
@@ -688,6 +924,21 @@ export default function Dashboard() {
     else saveStatusForReal(id, newStatus)
     setCases(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c))
     setActionCase(prev => prev?.id === id ? { ...prev, status: newStatus } : prev)
+  }
+
+  function handleEditSave(updatedCase) {
+    // Persist to localStorage for real cases
+    if (!updatedCase._isSample) {
+      try {
+        const stored = loadRealCases()
+        const next   = stored.map(c => c.id === updatedCase.id ? updatedCase : c)
+        localStorage.setItem('approved_cases', JSON.stringify(next))
+      } catch { /* ignore */ }
+    }
+    setCases(prev => prev.map(c => c.id === updatedCase.id ? updatedCase : c))
+    setEditCase(null)
+    setDeleteToast('Changes saved')
+    setTimeout(() => setDeleteToast(null), 3000)
   }
 
   function handleDelete(id) {
@@ -732,6 +983,8 @@ export default function Dashboard() {
   return (
     <>
       {caseDetailsCase && <CaseDetailsModal cas={caseDetailsCase} onClose={() => setCaseDetailsCase(null)} />}
+      {editHistoryCase && <EditHistoryModal cas={editHistoryCase} onClose={() => setEditHistoryCase(null)} />}
+      {editCase && <EditCaseModal cas={editCase} onClose={() => setEditCase(null)} onSave={handleEditSave} />}
       {actionCase && <DetailModal cas={actionCase} onClose={() => setActionCase(null)} onStatusChange={handleStatusChange} />}
       {deleteToast && <div className="delete-toast" role="status">{deleteToast}</div>}
 
@@ -852,11 +1105,11 @@ export default function Dashboard() {
                         {cas.edits?.length > 0 && (
                           <button
                             className="edits-badge"
-                            onClick={() => setCaseDetailsCase(cas)}
+                            onClick={() => setEditHistoryCase(cas)}
                             title="View edit history"
                             aria-label={`${cas.edits.length} edit${cas.edits.length > 1 ? 's' : ''} made`}
                           >
-                            {cas.edits.length} edit{cas.edits.length > 1 ? 's' : ''}
+                            ✏️ {cas.edits.length} edit{cas.edits.length > 1 ? 's' : ''}
                           </button>
                         )}
                       </div>

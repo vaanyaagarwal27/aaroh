@@ -249,21 +249,20 @@
 .edits-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   font-family: var(--font);
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1565C0;
+  background: white;
+  border: 1.5px solid #1565C0;
+  padding: 6px 16px;
+  border-radius: 4px;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  text-decoration-color: var(--border);
   white-space: nowrap;
-  transition: color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.edits-badge:hover { color: var(--navy); text-decoration-color: var(--navy); }
+.edits-badge:hover { background: #1565C0; color: white; }
 
 /* Order type badge */
 .order-badge {
@@ -1281,6 +1280,266 @@
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ── Edit Case Modal (EditCaseModal + EditDirectionCard) ─────────────────── */
+.detail-modal--wide {
+  max-width: 820px;
+  width: 95vw;
+}
+
+.edc-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: #F8F9FA;
+  border-left: 3px solid var(--navy);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.edc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Direction card */
+.edc-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  overflow: hidden;
+}
+
+.edc-card--editing {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(28, 86, 145, 0.12);
+}
+
+.edc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #F8F9FA;
+  border-bottom: 1px solid var(--border);
+}
+
+.edc-index {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 24px;
+}
+
+.edc-cat-select {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text-primary);
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.edc-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.edc-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s, color 0.15s;
+}
+
+.edc-btn--edit {
+  background: #fff;
+  color: var(--navy);
+  border-color: var(--navy);
+}
+.edc-btn--edit:hover { background: #EEF4FB; }
+
+.edc-btn--save {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+.edc-btn--save:hover { background: var(--navy-dark); }
+
+.edc-btn--cancel {
+  background: #fff;
+  color: var(--text-secondary);
+}
+.edc-btn--cancel:hover { background: #F5F5F5; }
+
+/* Text / textarea body */
+.edc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: Georgia, 'Times New Roman', serif;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  resize: vertical;
+  min-height: 90px;
+  color: var(--text-primary);
+  background: #FAFAFA;
+}
+.edc-textarea:focus { outline: none; background: #fff; }
+
+.edc-text {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Footer fields (entity, timeline) */
+.edc-footer {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #FAFAFA;
+}
+
+.edc-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edc-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  min-width: 64px;
+}
+
+.edc-field-value {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.edc-input {
+  font-size: 13px;
+  font-family: var(--font);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: #fff;
+  flex: 1;
+  min-width: 180px;
+}
+.edc-input:focus { outline: none; border-color: var(--navy); }
+.edc-input--error { border-color: var(--red) !important; }
+
+/* Audit trail fields */
+.edc-audit {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+}
+
+.edc-audit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.edc-audit-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.edc-required {
+  color: var(--red);
+  margin-left: 2px;
+}
+
+.edc-error {
+  font-size: 11px;
+  color: var(--red);
+}
+
+/* Modal footer */
+.edc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: #F8F9FA;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  margin-top: auto;
+}
+
+.edc-cancel-btn {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font);
+}
+.edc-cancel-btn:hover { background: #F5F5F5; }
+
+.edc-save-btn {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 24px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--navy);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.edc-save-btn:hover { background: var(--navy-dark); }
+
+/* Edit button in Actions column */
+.edit-case-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--navy);
+  background: #fff;
+  color: var(--navy);
+  cursor: pointer;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.edit-case-btn:hover { background: #EEF4FB; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
