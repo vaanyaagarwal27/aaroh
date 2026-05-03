@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import VerificationPage from './VerificationPage'
 import Dashboard from './Dashboard'
+import AboutPage from './AboutPage'
 import Footer from './Footer'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -63,7 +64,14 @@ function NavBar({ activeView, onNavigate }) {
               Dashboard
             </button>
           </li>
-          <li><span className="nav-link nav-link--disabled" aria-disabled="true">About</span></li>
+          <li>
+            <button
+              className={`nav-link ${activeView === 'about' ? 'nav-link--active' : ''}`}
+              onClick={() => onNavigate('about')}
+            >
+              About
+            </button>
+          </li>
         </ul>
       </div>
     </nav>
@@ -323,7 +331,8 @@ export default function App() {
   function handleNavigate(target) {
     if (target === 'upload' && view === 'verify') { handleReject(); return }
     if (target === 'upload') { setView('upload'); return }
-    if (target === 'dashboard') { setView('dashboard') }
+    if (target === 'dashboard') { setView('dashboard'); return }
+    if (target === 'about') { setView('about') }
   }
 
   const meta       = result?.data?.case_metadata
@@ -354,6 +363,16 @@ export default function App() {
       <div className="app">
         <NavBar activeView="dashboard" onNavigate={handleNavigate} />
         <Dashboard />
+        <Footer />
+      </div>
+    )
+  }
+
+  if (view === 'about') {
+    return (
+      <div className="app">
+        <NavBar activeView="about" onNavigate={handleNavigate} />
+        <AboutPage />
         <Footer />
       </div>
     )
