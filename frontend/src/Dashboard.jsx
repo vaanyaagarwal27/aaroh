@@ -1107,6 +1107,7 @@ export default function Dashboard() {
                           <button
                             className="case-num-btn"
                             onClick={() => setCaseDetailsCase(cas)}
+                            title={meta.case_number ?? ''}
                           >
                             {meta.case_number ?? '—'}
                           </button>

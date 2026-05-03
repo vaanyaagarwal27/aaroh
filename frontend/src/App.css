@@ -908,6 +908,44 @@ body {
   .about-body  { padding: 32px 20px 60px; }
 }
 
+/* ── Pending extraction banner ───────────────────────────────────────────── */
+.pending-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fffbea;
+  border-bottom: 2px solid #f59e0b;
+  padding: 14px 32px;
+  flex-wrap: wrap;
+}
+.pending-banner-icon { font-size: 20px; flex-shrink: 0; }
+.pending-banner-text { flex: 1; font-size: 14px; color: #78350f; min-width: 200px; }
+.pending-banner-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.pending-resume-btn {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pending-resume-btn:hover { background: #d97706; }
+.pending-discard-btn {
+  background: transparent;
+  color: #78350f;
+  border: 1.5px solid #f59e0b;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pending-discard-btn:hover { background: #fef3c7; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .app-main { padding: 24px 20px 48px; }

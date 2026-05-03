@@ -272,15 +272,47 @@ function DirectionCard({ direction, index }) {
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 
+function savePending(json, fileName) {
+  try {
+    localStorage.setItem('aaroh_pending_extraction', JSON.stringify({
+      extractedData: json,
+      fileName,
+      uploadedAt: new Date().toISOString(),
+      status: 'pending_verification',
+    }))
+  } catch { /* ignore */ }
+}
+
+function clearPending() {
+  try { localStorage.removeItem('aaroh_pending_extraction') } catch { /* ignore */ }
+}
+
+function loadPending() {
+  try {
+    const raw = localStorage.getItem('aaroh_pending_extraction')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
 export default function App() {
-  const [file, setFile]       = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [result, setResult]   = useState(null)
-  const [pdfUrl, setPdfUrl]   = useState(null)
-  const [view,   setView]     = useState('upload')   // 'upload' | 'verify'
-  const inputRef              = useRef(null)
-  const resultsRef            = useRef(null)
+  const [file,            setFile]            = useState(null)
+  const [loading,         setLoading]         = useState(false)
+  const [error,           setError]           = useState(null)
+  const [result,          setResult]          = useState(null)
+  const [pendingFileName, setPendingFileName] = useState(null)
+  const [pdfUrl,          setPdfUrl]          = useState(null)
+  const [view,            setView]            = useState('upload')
+  const inputRef = useRef(null)
+
+  // On mount: restore any pending extraction so Approve/Reject are always reachable
+  useEffect(() => {
+    const pending = loadPending()
+    if (pending?.extractedData) {
+      setResult(pending.extractedData)
+      setPendingFileName(pending.fileName ?? null)
+      setView('verify')
+    }
+  }, [])
 
   // Scroll to top on every view change
   useEffect(() => {
@@ -310,6 +342,10 @@ export default function App() {
 
       if (!res.ok || !json.success) throw new Error(json.error ?? `Server error ${res.status}`)
 
+      // Persist immediately so a navigation away can't orphan this extraction
+      savePending(json, file.name)
+      setPendingFileName(file.name)
+
       // Create object URL for the PDF viewer before switching views
       const url = URL.createObjectURL(file)
       setPdfUrl(url)
@@ -323,23 +359,22 @@ export default function App() {
   }
 
   function handleReject() {
+    clearPending()
     if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null) }
     setResult(null)
+    setPendingFileName(null)
     setFile(null)
     setError(null)
     setView('upload')
   }
 
   function handleNavigate(target) {
-    if (target === 'upload' && view === 'verify') { handleReject(); return }
+    // Always preserve pending extraction when navigating away from verify —
+    // localStorage keeps it safe and the banner will surface it on return.
     if (target === 'upload') { setView('upload'); return }
     if (target === 'dashboard') { setView('dashboard'); return }
     if (target === 'about') { setView('about') }
   }
-
-  const meta       = result?.data?.case_metadata
-  const directions = result?.data?.directions ?? []
-  const summary    = result?.summary
 
   if (view === 'verify' && result) {
     return (
@@ -350,8 +385,9 @@ export default function App() {
           result={result}
           onReject={handleReject}
           onApprove={() => {
+            clearPending()
             if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null) }
-            setResult(null); setFile(null)
+            setResult(null); setFile(null); setPendingFileName(null)
             setView('dashboard')
           }}
         />
@@ -384,6 +420,27 @@ export default function App() {
     <div className="app">
       <NavBar activeView="upload" onNavigate={handleNavigate} />
 
+      {result && (
+        <div className="pending-banner" role="alert">
+          <span className="pending-banner-icon">⚠️</span>
+          <div className="pending-banner-text">
+            <strong>Unfinished verification</strong>
+            {pendingFileName && <> — &ldquo;{pendingFileName}&rdquo;</>}
+            {loadPending()?.uploadedAt && (
+              <> extracted on {new Date(loadPending().uploadedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</>
+            )}
+          </div>
+          <div className="pending-banner-actions">
+            <button className="pending-resume-btn" onClick={() => setView('verify')}>
+              Resume Verification →
+            </button>
+            <button className="pending-discard-btn" onClick={handleReject}>
+              Discard &amp; Upload New
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="upload-hero">
         <h1 className="upload-hero-title">Court Judgment Intelligence Platform</h1>
         <p className="upload-hero-sub">Transform 50-page judgments into verified action plans in minutes</p>
@@ -415,28 +472,6 @@ export default function App() {
           </div>
         )}
 
-        {result && (
-          <div className="results" ref={resultsRef}>
-            <MetadataBanner meta={meta} />
-            <StatsGrid summary={summary} />
-
-            {directions.length > 0 && (
-              <section aria-labelledby="directions-heading">
-                <div className="directions-header">
-                  <h2 id="directions-heading" className="section-heading">
-                    Extracted Directions
-                  </h2>
-                  <span className="directions-count">{directions.length} directions found</span>
-                </div>
-                <div className="directions-list">
-                  {directions.map((d, i) => (
-                    <DirectionCard key={i} direction={d} index={i} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
       </main>
 
       <Footer />
