@@ -672,35 +672,28 @@ body {
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
-.app-footer {
+/* old upload-page footer — kept for reference, replaced by .site-footer */
+.app-footer { display: none; }
+
+/* ── Shared site footer ──────────────────────────────────────────────────── */
+.site-footer {
   background: #F5F5F5;
   border-top: 1px solid var(--border);
   padding: 20px 40px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-shrink: 0;
 }
 
-.app-footer p {
+.site-footer p {
   font-size: 13px;
   color: var(--text-secondary);
+  margin: 0;
 }
 
-.app-footer a {
+.site-footer-link {
+  cursor: default;
   color: var(--navy);
-  text-decoration: none;
   font-weight: 500;
-}
-
-.app-footer a:hover {
-  text-decoration: underline;
-}
-
-.footer-tagline {
-  font-size: 12px !important;
-  color: var(--text-muted) !important;
-  font-style: italic;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

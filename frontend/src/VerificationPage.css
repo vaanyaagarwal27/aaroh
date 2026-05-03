@@ -144,6 +144,203 @@
 }
 .pdf-source-btn:hover { background: #DDE5F0; }
 
+/* ── Action Plan card ────────────────────────────────────────────────────────*/
+.action-plan-section { /* wrapper — no extra margin needed, verify-content gap handles it */ }
+
+.ap-card {
+  background: #fff;
+  border: 2px solid var(--navy);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(28,86,145,0.10);
+  overflow: hidden;
+}
+
+.ap-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  background: linear-gradient(135deg, #EEF4FB 0%, #F8FBFF 100%);
+  border-bottom: 1px solid #C5D8F0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ap-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ap-icon { font-size: 24px; line-height: 1; }
+
+.ap-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 2px;
+}
+
+.ap-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.ap-priority {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.ap-priority--high   { background: var(--red-bg);   color: var(--red);   border: 1px solid #EF9A9A; }
+.ap-priority--medium { background: var(--amber-bg); color: var(--amber); border: 1px solid #FFCC80; }
+.ap-priority--low    { background: var(--green-bg); color: var(--green); border: 1px solid #A5D6A7; }
+
+.ap-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ap-section { display: flex; flex-direction: column; gap: 10px; }
+
+.ap-section--bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.ap-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Actions list */
+.ap-actions-list { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.ap-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+.ap-action--compliance { background: var(--green-bg); color: var(--green); border-color: #A5D6A7; }
+.ap-action--appeal     { background: #EEF2F8;         color: var(--navy);  border-color: #C5D0DF; }
+.ap-action--urgent     { background: var(--red-bg);   color: var(--red);   border-color: #EF9A9A; }
+
+.ap-action-icon { font-size: 16px; }
+
+/* Deadlines */
+.ap-deadlines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ap-deadline {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #F8F9FA;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.ap-deadline--urgent {
+  background: var(--red-bg);
+  border-color: #EF9A9A;
+}
+
+.ap-deadline-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.ap-deadline-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 0 0 3px;
+}
+
+.ap-deadline-date {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+}
+
+.ap-deadline-days {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  margin: 0;
+}
+
+.ap-deadline-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Entities */
+.ap-entities {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ap-entity {
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 5px 10px;
+  background: #F8F9FA;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* Department select */
+.ap-dept-select {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  min-height: 44px;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.ap-dept-select:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(28,86,145,0.12);
+}
+
+@media (max-width: 640px) {
+  .ap-deadlines       { grid-template-columns: 1fr; }
+  .ap-section--bottom { grid-template-columns: 1fr; }
+}
+
 /* ── Metadata section ────────────────────────────────────────────────────────*/
 .vmeta-section {
   /* wrapper — no card style, section-header handles the title row */
@@ -427,6 +624,45 @@
   transition: border-color 0.15s;
 }
 .vdir-input:focus { outline: none; border-color: var(--navy); background: #fff; }
+
+/* ── Audit trail fields (shown inside editing card) ──────────────────────────*/
+.vdir-audit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #FFFBF0;
+  border: 1px solid #FFE082;
+  border-radius: var(--radius-sm);
+}
+
+.vdir-audit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.vdir-audit-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #7B5500;
+}
+
+.vdir-required { color: var(--red); margin-left: 2px; }
+
+.vdir-input--error {
+  border-color: var(--red) !important;
+  background: var(--red-bg) !important;
+}
+
+.vdir-error-msg {
+  font-size: 11px;
+  color: var(--red);
+  font-weight: 500;
+}
 
 /* ── Bottom action bar ───────────────────────────────────────────────────────*/
 .verify-actions {

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import VerificationPage from './VerificationPage'
 import Dashboard from './Dashboard'
+import Footer from './Footer'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -337,7 +338,13 @@ export default function App() {
           pdfUrl={pdfUrl}
           result={result}
           onReject={handleReject}
+          onApprove={() => {
+            if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null) }
+            setResult(null); setFile(null)
+            setView('dashboard')
+          }}
         />
+        <Footer />
       </div>
     )
   }
@@ -347,6 +354,7 @@ export default function App() {
       <div className="app">
         <NavBar activeView="dashboard" onNavigate={handleNavigate} />
         <Dashboard />
+        <Footer />
       </div>
     )
   }
@@ -400,10 +408,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="app-footer">
-        <p>© 2025 Aaroh &nbsp;·&nbsp; <a href="#">Contact</a> &nbsp;·&nbsp; <a href="#">Privacy Policy</a></p>
-        <p className="footer-tagline">Built for Legal Efficiency</p>
-      </footer>
+      <Footer />
     </div>
   )
 }
