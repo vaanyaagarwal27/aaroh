@@ -91,9 +91,6 @@ function UploadSection({ file, loading, onFileChange, onSubmit, inputRef }) {
   return (
     <section className="upload-section" aria-labelledby="upload-heading">
       <div className="upload-card card">
-        <h2 id="upload-heading" className="section-heading">Upload Judgment PDF</h2>
-        <p className="upload-hint">Supports PDF judgments from any Indian High Court or Supreme Court</p>
-
         <form onSubmit={onSubmit}>
           <div
             className={`dropzone ${dragging ? 'dropzone--drag' : ''} ${file ? 'dropzone--ready' : ''}`}
@@ -381,6 +378,16 @@ export default function App() {
   return (
     <div className="app">
       <NavBar activeView="upload" onNavigate={handleNavigate} />
+
+      <div className="upload-hero">
+        <h1 className="upload-hero-title">Court Judgment Intelligence Platform</h1>
+        <p className="upload-hero-sub">Transform 50-page judgments into verified action plans in minutes</p>
+        <ul className="upload-hero-points">
+          <li>AI-powered extraction with human verification</li>
+          <li>Automatic urgency tracking and deadline calculation</li>
+          <li>Complete audit trail for accountability</li>
+        </ul>
+      </div>
 
       <main className="app-main">
         <UploadSection
