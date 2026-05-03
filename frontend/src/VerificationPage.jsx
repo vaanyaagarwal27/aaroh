@@ -522,17 +522,7 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
             <button className="back-btn" onClick={onReject}>← Back to Upload</button>
             <span className="verify-title">Review &amp; Verify Extraction</span>
           </div>
-          <div className="verify-subheader-right">
-            {pdfUrl && (
-              <button className="view-pdf-main-btn" onClick={() => setPdfOpen(true)}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                View Source PDF
-              </button>
-            )}
-          </div>
+          <div className="verify-subheader-right"></div>
         </div>
 
         {/* ── Scrollable content ── */}
@@ -553,7 +543,6 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
           <section className="vmeta-section">
             <div className="vsection-header">
               <h2 className="vsection-title">Case Metadata</h2>
-              <PdfBtn onClick={() => setPdfOpen(true)} />
             </div>
 
             <div className="vmeta-banner">
