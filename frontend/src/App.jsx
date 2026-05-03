@@ -282,6 +282,11 @@ export default function App() {
   const inputRef              = useRef(null)
   const resultsRef            = useRef(null)
 
+  // Scroll to top on every view change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [view])
+
   // Revoke object URL when leaving verify view to free memory
   useEffect(() => {
     return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl) }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import './Dashboard.css'
 
 // ── Sample data ───────────────────────────────────────────────────────────────
@@ -424,6 +424,8 @@ function EditCaseModal({ cas, onClose, onSave }) {
   const meta = cas.case_metadata ?? {}
   const [localDirs,  setLocalDirs]  = useState(cas.directions ?? [])
   const [localEdits, setLocalEdits] = useState(cas.edits ?? [])
+  const bodyRef = useRef(null)
+  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }) }, [])
 
   function handleDirChange(index, updated, editRecord) {
     setLocalDirs(prev => prev.map((d, i) => i === index ? { ...d, ...updated } : d))
@@ -466,7 +468,7 @@ function EditCaseModal({ cas, onClose, onSave }) {
           </div>
         </div>
 
-        <div className="detail-modal-body">
+        <div className="detail-modal-body" ref={bodyRef}>
           <p className="edc-intro">
             Edits require a reason and your name. All changes are logged in the audit trail.
           </p>
@@ -507,6 +509,9 @@ function CaseDetailsModal({ cas, onClose }) {
   const petCnt     = summary.to_petitioner    ?? dirs.filter(d => d.category === 'TO_PETITIONER').length
   const obsCnt     = summary.observations     ?? dirs.filter(d => d.category === 'OBSERVATION').length
 
+  const bodyRef = useRef(null)
+  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }) }, [])
+
   return (
     <div
       className="detail-backdrop"
@@ -532,7 +537,7 @@ function CaseDetailsModal({ cas, onClose }) {
           </div>
         </div>
 
-        <div className="detail-modal-body">
+        <div className="detail-modal-body" ref={bodyRef}>
 
           {/* Stats */}
           <div className="cd-stats">
@@ -607,6 +612,9 @@ function CaseDetailsModal({ cas, onClose }) {
 
 function EditHistoryModal({ cas, onClose }) {
   const edits = cas.edits ?? []
+  const bodyRef = useRef(null)
+  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }) }, [])
+
   return (
     <div
       className="detail-backdrop"
@@ -625,7 +633,7 @@ function EditHistoryModal({ cas, onClose }) {
             <button className="detail-modal-close" onClick={onClose} aria-label="Close">✕</button>
           </div>
         </div>
-        <div className="detail-modal-body">
+        <div className="detail-modal-body" ref={bodyRef}>
           <div className="dm-section detail-edit-history">
             <h3 className="dm-section-title">
               Edit History ({edits.length} change{edits.length !== 1 ? 's' : ''})
@@ -669,6 +677,8 @@ function DetailModal({ cas, onClose, onStatusChange }) {
 
   const [stepsData,   setStepsData]   = useState(() => loadSteps(cas.id))
   const [localStatus, setLocalStatus] = useState(cas.status ?? 'Pending')
+  const bodyRef = useRef(null)
+  useEffect(() => { bodyRef.current?.scrollTo({ top: 0 }) }, [])
 
   const checkedSteps = stepsData.checked
   const allDone      = NEXT_STEPS.every((_, i) => checkedSteps[i])
@@ -742,7 +752,7 @@ function DetailModal({ cas, onClose, onStatusChange }) {
           </div>
         </div>
 
-        <div className="detail-modal-body">
+        <div className="detail-modal-body" ref={bodyRef}>
 
           {/* ── 1. Action Plan ── */}
           <div className="dm-section dm-section--action">
