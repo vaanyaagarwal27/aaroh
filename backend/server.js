@@ -26,112 +26,214 @@ app.post('/api/extract', upload.single('pdf'), async (req, res) => {
     const pdfData = fs.readFileSync(pdfPath);
     const base64PDF = pdfData.toString('base64');
 
-    const prompt = `You are an expert Indian Legal Clerk with deep knowledge of Karnataka High Court judgment structures. Analyze this court judgment with surgical precision.
+    const prompt = `You are an expert Indian Legal Clerk with deep knowledge of Indian court 
+judgment structures, especially Karnataka High Court.
 
-### CRITICAL EXTRACTION ZONES:
-1. **HEADER SECTION** (First 2-3 pages):
-   - Case number format: WP/[number]/[year] or WA/[number]/[year] or CRL.P/[number]/[year]
-   - Court name: "High Court of Karnataka at Bengaluru" or similar
-   - Parties: Look for "BETWEEN:" followed by petitioner name, then "AND:" or "Vs." followed by respondent
-   - Order date: Look for "DATED THIS THE" or date at end of judgment
+Return ONLY valid JSON. No markdown, no backticks, no explanation, 
+no text before or after the JSON. If you add anything outside the JSON 
+the output will break.
 
-2. **OPERATIVE ORDER SECTION** (Usually last 1-3 pages):
-   Focus HEAVILY on text following these exact phrases:
-   - "In view of the above,"
-   - "Accordingly,"
-   - "Hence the following directions are issued:"
-   - "The writ petition is disposed of with the following directions:"
-   - "Resultantly,"
-   - "In the result,"
-   - "For the aforesaid reasons,"
-   
-   THIS IS WHERE ACTIONABLE DIRECTIONS LIVE. Extract EVERY sentence in this section.
+### STEP 1 — FIND THESE SECTIONS IN ORDER:
 
-3. **ORDER TYPE DETECTION**:
-   - INTERIM: Contains phrases like "till next date", "subject to further orders", "stay granted", "interim relief", "status quo"
-   - FINAL_DISPOSAL: Contains "disposed of", "allowed", "dismissed", "petition stands disposed"
+HEADER SECTION (first 2-3 pages):
+- ⁠  ⁠Case number: formats like WP/123/2024, FAO 86/2021, CRL.P/456/2023
+- ⁠  ⁠Court name: exact name as written
+- ⁠  ⁠Order date: look for "DATED THIS THE" or date at very end of judgment
+- ⁠  ⁠Parties: look for "BETWEEN:" then petitioner, then "AND:" or "Vs." 
+  for respondent
 
-### DIRECTION CLASSIFICATION LOGIC:
+OPERATIVE ORDER SECTION (last 1-3 pages):
+This is where ALL actionable directions live. Search for text after:
+- ⁠  ⁠"In view of the above,"
+- ⁠  ⁠"Accordingly,"
+- ⁠  ⁠"Hence the following directions are issued:"
+- ⁠  ⁠"The writ petition is disposed of with the following directions:"
+- ⁠  ⁠"Resultantly,"
+- ⁠  ⁠"In the result,"
+- ⁠  ⁠"For the aforesaid reasons,"
+Extract EVERY sentence in this section without skipping any.
 
-**BINDING_TO_GOVT** - Use this when direction:
-- Orders any government entity (State, Department, Officer, Authority, Corporation, Board, Commission)
-- Uses mandatory language: "shall", "must", "directed to", "ordered to"
-- Examples:
-  * "The State shall reconsider the application within 30 days"
-  * "The respondent authorities are directed to issue the NOC"
-  * "The Tahsildar is ordered to conduct an inquiry"
-  * ANY direction to respondents numbered R1, R2, R3 when they are government entities
+### STEP 2 — CLASSIFY EACH DIRECTION:
 
-**TO_PETITIONER** - Use when direction:
-- Orders the petitioner or private party to do something
-- Examples:
-  * "The petitioner shall submit revised application"
-  * "The writ petitioner may approach the competent authority"
-  
-**OBSERVATION** - Use when text is:
-- Judicial commentary without actionable mandate
-- Expressions of hope or expectation
-- General legal principles stated
-- Examples:
-  * "It is expected that such delays will not recur"
-  * "We observe that the procedure was not followed"
-  * "This Court is of the view that..."
+BINDING_TO_GOVT — when direction:
+- ⁠  ⁠Orders any government entity (State, Department, Officer, Authority, 
+  Corporation, Board, Commission, Tribunal)
+- ⁠  ⁠Uses mandatory language: shall, must, directed to, ordered to, 
+  is required to, hereby orders, is commanded to
+- ⁠  ⁠Examples:
+  "The State shall reconsider the application within 30 days"
+  "The respondent authorities are directed to issue the NOC"
+  "The Tahsildar is ordered to conduct an inquiry"
+  Any direction to R1, R2, R3 when they are government entities
 
-### TIMELINE EXTRACTION RULES:
-- **Explicit deadlines**: "within 30 days", "within two weeks", "within 3 months from today"
-- **Vague deadlines**: "forthwith", "immediately", "as expeditiously as possible", "at the earliest", "without delay"
-  → For vague deadlines, set calculated_deadline_days to 30 (internal compliance standard)
-- **No deadline**: "may consider", "is at liberty to" → set calculated_deadline_days to null
-- **Calculate from**: Always from order date unless specifically says "from date of application" or "from receipt of notice"
+TO_PETITIONER — when direction:
+- ⁠  ⁠Orders the petitioner or any private party to act
+- ⁠  ⁠Examples:
+  "The petitioner shall submit revised application"
+  "The writ petitioner may approach the competent authority"
 
-### RESPONSIBLE ENTITY IDENTIFICATION:
-- Look for specific designations: "Tahsildar", "Deputy Commissioner", "Chief Secretary", "Commissioner of Police"
-- Look for department names: "Revenue Department", "Transport Department", "Urban Development Authority"
-- Extract respondent numbers if applicable: "R1", "R2 (Deputy Commissioner, Bangalore Urban)"
-- If direction says "respondents" generally, mark as "Respondent Authorities (State of Karnataka)"
+OBSERVATION — when text is:
+- ⁠  ⁠Judicial commentary with no actionable mandate
+- ⁠  ⁠Expressions of hope, expectation, or disappointment
+- ⁠  ⁠General legal principles being stated
+- ⁠  ⁠Examples:
+  "It is expected that such delays will not recur"
+  "We observe that the procedure was not followed"
+  "This Court is of the view that..."
+  "It is unfortunate that..."
+  "It appears that..."
 
-### APPEAL LIMITATION PERIOD:
-- High Court to Supreme Court: 90 days from order date (for SLP under Article 136)
-- District/Subordinate Court to High Court: 30 days for most matters
-- If interim order: mention "Subject to appeal/modification"
+### STEP 3 — EXTRACT TIMELINES:
 
-### OUTPUT FORMAT:
-Return ONLY valid JSON (no markdown, no code blocks):
+Explicit deadlines: "within 30 days", "within two weeks", 
+"within 3 months from today"
+→ Convert to actual calendar date by adding to order date
+→ Example: order date 29-04-2026 + 2 months = 29-06-2026
+
+Vague deadlines: "forthwith", "immediately", 
+"as expeditiously as possible", "at the earliest", "without delay"
+→ Set calculated_deadline to order date + 30 days
+→ Mark original_timeline as the vague phrase
+
+No deadline: "may consider", "is at liberty to", no time mentioned
+→ Set calculated_deadline to null
+→ Set calculated_deadline_days to null
+
+Always calculate deadline from order date unless judgment specifically 
+says "from date of application" or "from receipt of notice"
+
+### STEP 4 — CALCULATE URGENCY:
+
+Do this calculation yourself every single time:
+Step A: Find order_date and calculated_deadline from your extraction
+Step B: Count the number of days between order_date and 
+        calculated_deadline
+Step C: Apply these rules with no exceptions:
+
+HIGH urgency if ANY of these are true:
+- ⁠  ⁠Days between order and deadline is less than 30
+- ⁠  ⁠Case involves life, safety, liberty, or contempt of court
+- ⁠  ⁠Vague deadline was used (forthwith, immediately) 
+  since these imply extreme urgency
+- ⁠  ⁠Court explicitly used words "urgent" or "immediately"
+
+MEDIUM urgency if ALL of these are true:
+- ⁠  ⁠Days between order and deadline is between 31 and 90
+- ⁠  ⁠Case involves compensation, service matters, property, 
+  land, or administrative action
+- ⁠  ⁠No life or safety risk involved
+
+LOW urgency if ANY of these are true:
+- ⁠  ⁠Days between order and deadline is more than 90
+- ⁠  ⁠No deadline was mentioned at all
+- ⁠  ⁠Deadline is REASONABLE_TIME with no specific date
+
+Show your working like this in urgency_calculation field:
+"Order date 29-04-2026 + 2 months = deadline 29-06-2026 = 
+61 days from order = MEDIUM. Case involves compensation, 
+no life/safety risk."
+
+### STEP 5 — IDENTIFY RESPONSIBLE ENTITY:
+
+Look for specific designations:
+Tahsildar, Deputy Commissioner, Chief Secretary, 
+Commissioner of Police, Principal Secretary
+
+Look for department names:
+Revenue Department, Transport Department, 
+Urban Development Authority, Railways, Ministry of X
+
+Extract respondent numbers if applicable:
+R1, R2 (Deputy Commissioner Bangalore Urban)
+
+If direction says "respondents" generally:
+Write "Respondent Authorities (State of Karnataka)"
+
+### STEP 6 — APPEAL LIMITATION:
+
+High Court order → Supreme Court SLP: 90 days from order date
+District Court → High Court: 30 days from order date
+If interim order: write "Subject to appeal or modification"
+Calculate the actual appeal deadline date from order date
+
+### STEP 7 — GENERATE ACTION PLAN:
+
+Write 3 to 5 specific steps the responsible department must actually do.
+Steps must be concrete, not generic.
+
+BAD: "Step 1: Comply with the court order"
+GOOD: "Step 1: Railway Claims Tribunal to list the matter on 
+       12-05-2026 and begin compensation assessment proceedings"
+
+### OUTPUT — RETURN EXACTLY THIS JSON STRUCTURE:
 
 {
   "case_metadata": {
-    "case_number": "string",
+    "case_number": "exact case number",
     "order_date": "DD-MM-YYYY",
-    "court_name": "High Court of Karnataka at Bengaluru",
-    "order_type": "INTERIM" or "FINAL_DISPOSAL",
+    "court_name": "exact court name",
+    "order_type": "INTERIM or FINAL_DISPOSAL",
+    "subject_matter": "one sentence describing what the case is about",
     "parties": {
-      "petitioner": "Full name of petitioner",
-      "respondent": "Full name of respondent(s)"
+      "petitioner": "full name",
+      "respondent": "full name"
     }
   },
+
   "directions": [
     {
-      "verbatim_text": "Exact text of direction from judgment",
-      "category": "BINDING_TO_GOVT" or "TO_PETITIONER" or "OBSERVATION",
-      "responsible_entity": "Specific officer/department name or null",
-      "original_timeline": "Exact timeline phrase from judgment or null",
-      "calculated_deadline_days": number or null,
-      "confidence_score": "HIGH" or "MEDIUM" or "LOW"
+      "verbatim_text": "exact words from judgment, do not paraphrase",
+      "category": "BINDING_TO_GOVT or TO_PETITIONER or OBSERVATION",
+      "responsible_entity": "specific officer or department name or null",
+      "original_timeline": "exact phrase from judgment or null",
+      "calculated_deadline": "DD-MM-YYYY or null",
+      "calculated_deadline_days": "number of days from order date or null",
+      "confidence_score": "HIGH or MEDIUM or LOW"
     }
   ],
-  "appeal_limitation": "90 days to Supreme Court" or "30 days as per statute" or "Subject to interim modification"
+
+  "overall_assessment": {
+    "primary_responsible_department": "main department that must act",
+    "action_required": "COMPLY or APPEAL or NO_ACTION",
+    "compliance_deadline": "DD-MM-YYYY or REASONABLE_TIME or null",
+    "appeal_deadline": "DD-MM-YYYY or NOT_APPLICABLE",
+    "urgency": "HIGH or MEDIUM or LOW",
+    "urgency_calculation": "show your working here as described above",
+    "action_plan": [
+      "Step 1: specific action",
+      "Step 2: specific action",
+      "Step 3: specific action"
+    ]
+  },
+
+  "confidence_overall": "HIGH or MEDIUM or LOW",
+  "confidence_reason": "one sentence explaining confidence level"
 }
 
-### CONFIDENCE SCORING:
-- HIGH: Direction is crystal clear, uses "shall"/"must", timeline is explicit, entity is named
-- MEDIUM: Direction is clear but timeline is vague OR entity not specifically named
-- LOW: Direction is ambiguous, uses permissive language ("may"), or buried in complex legalese
+### CONFIDENCE SCORING RULES:
 
-Extract ALL directions from the operative order section. Do not skip any. Even observations should be captured.`;
+HIGH: Direction uses shall or must, timeline is explicit, 
+      responsible entity is named specifically
 
-   const model = genAI.getGenerativeModel({ 
-  model: 'models/gemini-2.5-flash'
-});
+MEDIUM: Direction is clear but timeline is vague OR 
+        responsible entity not specifically named
+
+LOW: Direction is ambiguous, uses permissive language like may, 
+     or is buried in complex legal text
+
+### FINAL RULES:
+
+- ⁠  ⁠Extract ALL directions from operative order section, skip nothing
+- ⁠  ⁠Never paraphrase verbatim_text, copy exact words
+- ⁠  ⁠Never leave any field blank, write UNKNOWN if genuinely unsure
+- ⁠  ⁠Never write null for urgency, always calculate it
+- ⁠  ⁠If order_type is INTERIM, set appeal_limitation to 
+  "Subject to appeal or modification"
+- ⁠  ⁠Return only the JSON, absolutely nothing else`;
+
+    const model = genAI.getGenerativeModel({ 
+      model: 'models/gemini-2.5-flash'
+    });
     
     const result = await model.generateContent([
       prompt,
@@ -161,12 +263,6 @@ Extract ALL directions from the operative order section. Do not skip any. Even o
       binding_to_govt: extractedData.directions.filter(d => d.category === 'BINDING_TO_GOVT').length,
       to_petitioner: extractedData.directions.filter(d => d.category === 'TO_PETITIONER').length,
       observations: extractedData.directions.filter(d => d.category === 'OBSERVATION').length,
-      high_confidence: extractedData.directions.filter(d => d.confidence_score === 'HIGH').length,
-      requires_immediate_action: extractedData.directions.filter(d => 
-        d.category === 'BINDING_TO_GOVT' && 
-        d.calculated_deadline_days !== null && 
-        d.calculated_deadline_days <= 30
-      ).length
     };
 
     fs.unlinkSync(pdfPath);

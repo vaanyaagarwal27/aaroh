@@ -32,6 +32,7 @@
   gap: 24px;
   min-height: calc(100vh - 68px);
   background: #F0F2F5;
+  overflow-x: auto;
 }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -149,9 +150,10 @@
 .dash-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
-  min-width: 860px;
+  min-width: 980px;
+  table-layout: fixed;
 }
 
 /* Header row */
@@ -161,15 +163,36 @@
 }
 
 .dash-table th {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-secondary);
-  padding: 13px 16px;
+  padding: 11px 12px;
   text-align: left;
   white-space: nowrap;
+  overflow: hidden;
 }
+
+/* Per-column widths */
+.dash-table th:nth-child(1),
+.dash-table td:nth-child(1) { width: 160px; }  /* Case Number */
+.dash-table th:nth-child(2),
+.dash-table td:nth-child(2) { width: 90px;  }  /* Order Date */
+.dash-table th:nth-child(3),
+.dash-table td:nth-child(3) { width: 150px; }  /* Court */
+.dash-table th:nth-child(4),
+.dash-table td:nth-child(4) { width: 100px; }  /* Order Type */
+.dash-table th:nth-child(5),
+.dash-table td:nth-child(5) { width: 70px;  }  /* Binding Dirs */
+.dash-table th:nth-child(6),
+.dash-table td:nth-child(6) { width: 100px; }  /* Days Remaining */
+.dash-table th:nth-child(7),
+.dash-table td:nth-child(7) { width: 120px; }  /* Status */
+.dash-table th:nth-child(8),
+.dash-table td:nth-child(8) { width: 90px;  }  /* Verified On */
+.dash-table th:nth-child(9),
+.dash-table td:nth-child(9) { width: 160px; }  /* Actions */
 
 .dash-table th.col-num { text-align: center; }
 
@@ -182,12 +205,18 @@
 .dash-row:hover { background: #F8FBFF; }
 
 .dash-table td {
-  padding: 14px 16px;
+  padding: 12px 12px;
   vertical-align: middle;
+  overflow: hidden;
 }
 
-.col-date  { white-space: nowrap; color: var(--text-secondary); font-size: 13px; }
-.col-court { max-width: 200px; }
+.col-date  { white-space: nowrap; color: var(--text-secondary); font-size: 12px; }
+.col-court {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
 .col-num   { text-align: center; }
 
 /* Case number link button */

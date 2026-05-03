@@ -107,18 +107,25 @@ function parseOrderDate(str) {
   return isNaN(native) ? null : native
 }
 
-function calcDaysRemaining(orderDateStr) {
-  const orderDate = parseOrderDate(orderDateStr)
+function calcDaysRemaining(cas) {
+  // Prefer saved compliance_deadline (set at approval time from AI or calculated)
+  const deadlineStr = cas?.action_plan?.compliance_deadline
+  if (deadlineStr) {
+    const parsed = new Date(deadlineStr)
+    if (!isNaN(parsed)) {
+      const today = new Date(); today.setHours(0,0,0,0)
+      parsed.setHours(0,0,0,0)
+      return Math.ceil((parsed - today) / 86400000)
+    }
+  }
+  // Fall back: order_date + 30
+  const orderDate = parseOrderDate(cas?.case_metadata?.order_date)
   if (!orderDate) return null
-
   const deadline = new Date(orderDate)
   deadline.setDate(deadline.getDate() + 30)
   deadline.setHours(0, 0, 0, 0)
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  return Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  return Math.ceil((deadline - today) / 86400000)
 }
 
 function urgencyClass(days) {
@@ -449,10 +456,18 @@ function DetailModal({ cas, onClose, onStatusChange }) {
     }
   }
 
-  // Deadline calculations
-  const orderDate      = dmParseDate(meta.order_date)
-  const complianceDue  = dmAddDays(orderDate, 30)
-  const appealDue      = dmAddDays(orderDate, 90)
+  // Deadline calculations — prefer saved action_plan dates (may come from AI)
+  const orderDate = dmParseDate(meta.order_date)
+  const complianceDue = (() => {
+    const s = cas.action_plan?.compliance_deadline
+    if (s) { const p = new Date(s); if (!isNaN(p)) return p }
+    return dmAddDays(orderDate, 30)
+  })()
+  const appealDue = (() => {
+    const s = cas.action_plan?.appeal_deadline
+    if (s) { const p = new Date(s); if (!isNaN(p)) return p }
+    return dmAddDays(orderDate, 90)
+  })()
   const daysLeft       = dmDaysFrom(complianceDue)
   const daysLeftAppeal = dmDaysFrom(appealDue)
 
@@ -705,8 +720,8 @@ export default function Dashboard() {
       const bInterim = b.case_metadata?.order_type === 'INTERIM' ? 0 : 1
       if (aInterim !== bInterim) return aInterim - bInterim
       if (!sortUrgency) return 0
-      const da = calcDaysRemaining(a.case_metadata?.order_date)
-      const db = calcDaysRemaining(b.case_metadata?.order_date)
+      const da = calcDaysRemaining(a)
+      const db = calcDaysRemaining(b)
       if (da === null && db === null) return 0
       if (da === null) return 1
       if (db === null) return -1
@@ -819,7 +834,7 @@ export default function Dashboard() {
                 const meta      = cas.case_metadata ?? {}
                 const isFinal   = meta.order_type === 'FINAL_DISPOSAL'
                 const isInterim = meta.order_type === 'INTERIM'
-                const days      = calcDaysRemaining(meta.order_date)
+                const days      = calcDaysRemaining(cas)
                 const urgCls    = urgencyClass(days)
                 return (
                   <tr key={cas.id} className={`dash-row ${isInterim ? 'dash-row--interim' : ''}`}>
