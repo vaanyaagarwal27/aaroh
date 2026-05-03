@@ -184,14 +184,35 @@ function saveSampleStatus(id, status) {
   } catch { /* ignore */ }
 }
 
+function loadDeletedSamples() {
+  try { return new Set(JSON.parse(localStorage.getItem('aaroh_deleted_samples') ?? '[]')) } catch { return new Set() }
+}
+function markSampleDeleted(id) {
+  try {
+    const deleted = loadDeletedSamples()
+    deleted.add(id)
+    localStorage.setItem('aaroh_deleted_samples', JSON.stringify([...deleted]))
+  } catch { /* ignore */ }
+}
+
+function deleteRealCase(id) {
+  try {
+    const cases = loadRealCases()
+    localStorage.setItem('approved_cases', JSON.stringify(cases.filter(c => c.id !== id)))
+  } catch { /* ignore */ }
+}
+
 function loadAllCases() {
   const real           = loadRealCases()
   const sampleStatuses = loadSampleStatuses()
-  const samples = SAMPLE_CASES.map(c => ({
-    ...c,
-    status: sampleStatuses[c.id] ?? c._default_status ?? 'Pending',
-    _isSample: true,
-  }))
+  const deletedSamples = loadDeletedSamples()
+  const samples = SAMPLE_CASES
+    .filter(c => !deletedSamples.has(c.id))
+    .map(c => ({
+      ...c,
+      status: sampleStatuses[c.id] ?? c._default_status ?? 'Pending',
+      _isSample: true,
+    }))
   return [...samples, ...real]
 }
 
@@ -231,14 +252,36 @@ const NEXT_STEPS = [
 
 const MODAL_STATUS_OPTIONS = ['Pending', 'In Progress', 'Completed', 'Awaiting Review']
 
+// ── Steps persistence ─────────────────────────────────────────────────────────
+
+function stepsKey(id) { return `aaroh_steps_${id}` }
+
+function loadSteps(id) {
+  try { return JSON.parse(localStorage.getItem(stepsKey(id)) ?? 'null') ?? { checked: {}, updatedAt: null } }
+  catch { return { checked: {}, updatedAt: null } }
+}
+
+function saveSteps(id, checked) {
+  const updatedAt = new Date().toLocaleString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  })
+  try { localStorage.setItem(stepsKey(id), JSON.stringify({ checked, updatedAt })) }
+  catch { /* ignore */ }
+  return updatedAt
+}
+
 // ── Detail modal ──────────────────────────────────────────────────────────────
 
 function DetailModal({ cas, onClose, onStatusChange }) {
   const meta = cas.case_metadata ?? {}
   const dirs = cas.directions    ?? []
 
-  const [checkedSteps, setCheckedSteps] = useState({})
-  const [localStatus,  setLocalStatus]  = useState(cas.status ?? 'Pending')
+  const [stepsData,   setStepsData]   = useState(() => loadSteps(cas.id))
+  const [localStatus, setLocalStatus] = useState(cas.status ?? 'Pending')
+
+  const checkedSteps = stepsData.checked
+  const allDone      = NEXT_STEPS.every((_, i) => checkedSteps[i])
 
   function handleStatusChange(newStatus) {
     setLocalStatus(newStatus)
@@ -246,7 +289,15 @@ function DetailModal({ cas, onClose, onStatusChange }) {
   }
 
   function toggleStep(i) {
-    setCheckedSteps(s => ({ ...s, [i]: !s[i] }))
+    const next = { ...checkedSteps, [i]: !checkedSteps[i] }
+    const updatedAt = saveSteps(cas.id, next)
+    setStepsData({ checked: next, updatedAt })
+
+    // Auto-complete when all steps are checked
+    const nowAllDone = NEXT_STEPS.every((_, idx) => next[idx])
+    if (nowAllDone && localStatus !== 'Completed') {
+      handleStatusChange('Completed')
+    }
   }
 
   // Deadline calculations
@@ -357,8 +408,11 @@ function DetailModal({ cas, onClose, onStatusChange }) {
           </div>
 
           {/* ── 2. Next Steps checklist ── */}
-          <div className="dm-section">
-            <h3 className="dm-section-title">Next Steps</h3>
+          <div className={`dm-section ${allDone ? 'dm-section--alldone' : ''}`}>
+            <h3 className="dm-section-title">
+              Next Steps
+              {allDone && <span className="dm-alldone-badge">All complete</span>}
+            </h3>
             <ul className="dm-checklist">
               {NEXT_STEPS.map((step, i) => (
                 <li key={i} className={`dm-check-item ${checkedSteps[i] ? 'dm-check-item--done' : ''}`}>
@@ -374,6 +428,14 @@ function DetailModal({ cas, onClose, onStatusChange }) {
                 </li>
               ))}
             </ul>
+            {stepsData.updatedAt && (
+              <p className="dm-steps-updated">Last updated: {stepsData.updatedAt}</p>
+            )}
+            {allDone && (
+              <p className="dm-steps-autocomplete">
+                Status automatically set to <strong>Completed</strong>
+              </p>
+            )}
           </div>
 
           {/* ── 3. Case Timeline ── */}
@@ -422,28 +484,32 @@ function DetailModal({ cas, onClose, onStatusChange }) {
           {/* ── 4. Edit History ── */}
           {cas.edits?.length > 0 && (
             <div className="dm-section detail-edit-history">
-              <h3 className="dm-section-title detail-dirs-heading--edits">
-                ✏ Edit History <span className="detail-edit-count">{cas.edits.length} change{cas.edits.length > 1 ? 's' : ''}</span>
+              <h3 className="dm-section-title">
+                Edit History ({cas.edits.length} change{cas.edits.length > 1 ? 's' : ''})
               </h3>
               {cas.edits.map((e, i) => (
                 <div key={i} className="detail-edit-card">
-                  <div className="detail-edit-meta">
-                    <span className="detail-edit-field">{e.field}</span>
-                    <span className="detail-edit-who">by {e.edited_by}</span>
-                    <span className="detail-edit-when">{e.edited_at}</span>
-                  </div>
                   {e.changes?.map((ch, j) => (
                     <div key={j} className="detail-edit-change">
-                      <span className="detail-edit-change-field">{ch.field}</span>
-                      <div className="detail-edit-diff">
-                        {ch.original && <span className="detail-edit-before">{ch.original}</span>}
-                        <span className="detail-edit-arrow">→</span>
-                        {ch.updated && <span className="detail-edit-after">{ch.updated}</span>}
+                      {ch.field && (
+                        <p className="detail-edit-change-field">{ch.field}</p>
+                      )}
+                      <div className="detail-edit-block detail-edit-block--old">
+                        <span className="detail-edit-block-label">OLD TEXT</span>
+                        <p className="detail-edit-block-text">{ch.original || '—'}</p>
+                      </div>
+                      <div className="detail-edit-block detail-edit-block--new">
+                        <span className="detail-edit-block-label">NEW TEXT</span>
+                        <p className="detail-edit-block-text">{ch.updated || '—'}</p>
                       </div>
                     </div>
                   ))}
-                  <div className="detail-edit-reason">
-                    <span className="detail-edit-reason-label">Reason:</span> {e.reason}
+                  <div className="detail-edit-footer">
+                    <span><span className="detail-edit-footer-label">Changed by:</span> {e.edited_by}</span>
+                    <span className="detail-edit-footer-sep">|</span>
+                    <span><span className="detail-edit-footer-label">Reason:</span> {e.reason}</span>
+                    <span className="detail-edit-footer-sep">|</span>
+                    <span className="detail-edit-footer-time">{e.edited_at}</span>
                   </div>
                 </div>
               ))}
@@ -484,12 +550,23 @@ export default function Dashboard() {
   const [interimOnly,   setInterimOnly]   = useState(false)
   const [detailCase,    setDetailCase]    = useState(null)
   const [sortUrgency,   setSortUrgency]   = useState(false)
+  const [deleteToast,   setDeleteToast]   = useState(null)
 
   function handleStatusChange(id, newStatus) {
     const target = cases.find(c => c.id === id)
     if (target?._isSample) saveSampleStatus(id, newStatus)
     else saveStatusForReal(id, newStatus)
     setCases(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c))
+  }
+
+  function handleDelete(id) {
+    const target = cases.find(c => c.id === id)
+    if (!target || target._isSample) return
+    if (!window.confirm('Are you sure you want to delete this case from the dashboard?')) return
+    deleteRealCase(id)
+    setCases(prev => prev.filter(c => c.id !== id))
+    setDeleteToast('Case deleted')
+    setTimeout(() => setDeleteToast(null), 3000)
   }
 
   const interimCount = useMemo(
@@ -524,6 +601,7 @@ export default function Dashboard() {
   return (
     <>
       {detailCase && <DetailModal cas={detailCase} onClose={() => setDetailCase(null)} onStatusChange={handleStatusChange} />}
+      {deleteToast && <div className="delete-toast" role="status">{deleteToast}</div>}
 
       <div className="dashboard">
         {/* Page header */}
@@ -646,7 +724,7 @@ export default function Dashboard() {
                             title="View edit history"
                             aria-label={`${cas.edits.length} edit${cas.edits.length > 1 ? 's' : ''} made`}
                           >
-                            ✏ {cas.edits.length} edit{cas.edits.length > 1 ? 's' : ''}
+                            {cas.edits.length} edit{cas.edits.length > 1 ? 's' : ''}
                           </button>
                         )}
                       </div>
@@ -678,13 +756,25 @@ export default function Dashboard() {
                     </td>
                     <td className="col-date">{formatDate(cas.verified_at)}</td>
                     <td>
-                      <button
-                        className="view-btn"
-                        onClick={() => setDetailCase(cas)}
-                        aria-label={`View details for ${meta.case_number}`}
-                      >
-                        View Details
-                      </button>
+                      <div className="action-cell">
+                        <button
+                          className="view-btn"
+                          onClick={() => setDetailCase(cas)}
+                          aria-label={`View details for ${meta.case_number}`}
+                        >
+                          View Details
+                        </button>
+                        {!cas._isSample && (
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleDelete(cas.id)}
+                            aria-label={`Delete ${meta.case_number}`}
+                            title="Delete case"
+                          >
+                            🗑 Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
