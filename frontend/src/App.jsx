@@ -402,7 +402,7 @@ export default function App() {
       const form = new FormData()
       form.append('pdf', file)
 
-      const res  = await fetch('http://localhost:3000/api/extract', { method: 'POST', body: form })
+      const res  = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/extract`, { method: 'POST', body: form })
       const json = await res.json()
       console.log('API response:', json)
 
