@@ -279,7 +279,8 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
   })
   const [directions, setDirections] = useState(rawDirs)
   const [edits,      setEdits]      = useState([])
-  const [pdfOpen,    setPdfOpen]    = useState(false)
+  const [showPdf,    setShowPdf]    = useState(false)
+
   const [saving,     setSaving]     = useState(false)
 
   function updateDirection(index, updated, editRecord) {
@@ -354,7 +355,9 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
 
   return (
     <>
-      {pdfOpen && pdfUrl && <PdfModal pdfUrl={pdfUrl} onClose={() => setPdfOpen(false)} />}
+      {showPdf && pdfUrl && (
+        <PdfModal pdfUrl={pdfUrl} onClose={() => setShowPdf(false)} />
+      )}
 
       <div className="verify-page">
         {/* ── Sub-header ── */}
@@ -463,7 +466,7 @@ export default function VerificationPage({ pdfUrl, result, onReject, onApprove }
                     dir={d}
                     index={i}
                     onChange={updateDirection}
-                    onViewPdf={() => setPdfOpen(true)}
+                    onViewPdf={pdfUrl ? () => setShowPdf(true) : () => alert('PDF not available in demo mode')}
                   />
                 ))}
               </div>

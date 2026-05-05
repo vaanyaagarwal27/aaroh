@@ -463,6 +463,16 @@ body {
 }
 
 /* ── Error banner ────────────────────────────────────────────────────────── */
+.demo-fallback-banner {
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+  color: #0369a1;
+  font-size: 13px;
+  text-align: center;
+  padding: 8px 16px;
+  letter-spacing: 0.01em;
+}
+
 .error-banner {
   display: flex;
   align-items: flex-start;

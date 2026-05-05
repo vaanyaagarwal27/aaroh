@@ -96,6 +96,9 @@ export default function LoginPage({ onLogin }) {
           >
             {loading ? 'Signing in…' : 'Login'}
           </button>
+          <div style={{background:'#f5f5f5', borderRadius:'4px', padding:'10px', marginTop:'16px', fontSize:'12px', color:'#666'}}>
+            Demo credentials — Username: vaanya.agarwal / Password: 12345
+          </div>
         </form>
 
         <p className="login-footer">

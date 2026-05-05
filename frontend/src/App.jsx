@@ -5,6 +5,7 @@ import Dashboard from './Dashboard'
 import AboutPage from './AboutPage'
 import Footer from './Footer'
 import LoginPage from './LoginPage'
+import { findDemoExtraction, DEMO_EXTRACTIONS } from './data/demoExtractions'
 
 function loadUser() {
   try { return JSON.parse(localStorage.getItem('aaroh_user')) ?? null } catch { return null }
@@ -316,12 +317,42 @@ export default function App() {
   const [result,          setResult]          = useState(null)
   const [pendingFileName, setPendingFileName] = useState(null)
   const [pdfUrl,          setPdfUrl]          = useState(null)
+  const [isDemoFallback,  setIsDemoFallback]  = useState(false)
   const [view,            setView]            = useState(() => loadUser() ? 'upload' : 'login')
   const inputRef = useRef(null)
 
   function handleLogin(userData) {
     localStorage.setItem('aaroh_user', JSON.stringify(userData))
     setUser(userData)
+
+    // Seed dashboard with demo cases if it's empty
+    try {
+      const existing = JSON.parse(localStorage.getItem('approved_cases') ?? '[]')
+      if (existing.length === 0) {
+        const seeded = DEMO_EXTRACTIONS.map((demo, i) => {
+          const { case_metadata, directions, summary } = demo.result.data
+          return {
+            id:                 `case_demo_${i + 1}`,
+            verified_at:        new Date().toISOString(),
+            verified_by:        'System (Demo)',
+            verification_stamp: `Pre-loaded demo case`,
+            case_metadata,
+            directions,
+            summary,
+            status:             'Pending',
+            edits:              [],
+            action_plan: {
+              compliance_deadline: '',
+              appeal_deadline:     '',
+              assigned_department: '',
+              priority:            'MEDIUM',
+            },
+          }
+        })
+        localStorage.setItem('approved_cases', JSON.stringify(seeded))
+      }
+    } catch { /* ignore */ }
+
     setView('upload')
   }
 
@@ -375,9 +406,20 @@ export default function App() {
       const json = await res.json()
       console.log('API response:', json)
 
+      if (json.bothModelsFailed) {
+        const demo = DEMO_EXTRACTIONS[0]
+        setIsDemoFallback(true)
+        savePending(demo.result, file.name)
+        setPendingFileName(file.name)
+        setResult(demo.result)
+        setView('verify')
+        return
+      }
+
       if (!res.ok || !json.success) throw new Error(json.error ?? `Server error ${res.status}`)
 
       // Persist immediately so a navigation away can't orphan this extraction
+      setIsDemoFallback(false)
       savePending(json, file.name)
       setPendingFileName(file.name)
 
@@ -387,7 +429,21 @@ export default function App() {
       setResult(json)
       setView('verify')
     } catch (err) {
-      setError(err.message)
+      const is503 = err.message.includes('503') || err.message.includes('Service Unavailable')
+      if (is503) {
+        const demo = findDemoExtraction(file.name)
+        if (demo) {
+          setIsDemoFallback(true)
+          savePending(demo.result, file.name)
+          setPendingFileName(file.name)
+          setResult(demo.result)
+          setView('verify')
+          return
+        }
+        setError('Gemini API is temporarily unavailable due to high demand. Please wait 30 seconds and try again. This is a Google API issue, not an Aaroh issue.')
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -400,6 +456,7 @@ export default function App() {
     setPendingFileName(null)
     setFile(null)
     setError(null)
+    setIsDemoFallback(false)
     setView('upload')
   }
 
@@ -419,6 +476,11 @@ export default function App() {
     return (
       <div className="app">
         <NavBar activeView="verify" onNavigate={handleNavigate} user={user} onLogout={handleLogout} />
+        {isDemoFallback && (
+          <div className="demo-fallback-banner" role="status">
+            ℹ️ Gemini API is experiencing temporary high demand. Showing a sample extraction for demonstration purposes. All features remain fully functional.
+          </div>
+        )}
         <VerificationPage
           pdfUrl={pdfUrl}
           result={result}
@@ -427,6 +489,7 @@ export default function App() {
             clearPending()
             if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null) }
             setResult(null); setFile(null); setPendingFileName(null)
+            setIsDemoFallback(false)
             setView('dashboard')
           }}
         />

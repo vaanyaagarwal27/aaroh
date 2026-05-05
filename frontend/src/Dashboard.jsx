@@ -540,6 +540,61 @@ function EditHistoryModal({ cas, onClose }) {
   )
 }
 
+// ── Accordion list for binding directions ────────────────────────────────────
+
+function AccordionList({ dirs }) {
+  const [expanded, setExpanded] = useState(new Set([0]))
+
+  function toggle(i) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
+
+  return (
+    <ul className="dm-compliance-list">
+      {dirs.map((d, i) => {
+        const open = expanded.has(i)
+        return (
+          <li key={i} className={`dm-compliance-item dm-compliance-item--accordion ${open ? 'dm-compliance-item--open' : ''}`}>
+            <button
+              className="dm-accordion-row"
+              onClick={() => toggle(i)}
+              aria-expanded={open}
+            >
+              <span className={`dm-chevron ${open ? 'dm-chevron--open' : ''}`} aria-hidden="true">›</span>
+              {!open && (
+                <span className="dm-accordion-preview">
+                  {d.responsible_entity
+                    ? <><strong>{d.responsible_entity}</strong> — </>
+                    : null}
+                  {d.verbatim_text.length > 100
+                    ? d.verbatim_text.slice(0, 100).trimEnd() + '…'
+                    : d.verbatim_text}
+                </span>
+              )}
+              {open && (
+                <span className="dm-accordion-preview">
+                  {d.responsible_entity
+                    ? <><strong>{d.responsible_entity}</strong></>
+                    : null}
+                </span>
+              )}
+            </button>
+            {open && (
+              <p className="dm-accordion-body">
+                {d.verbatim_text}
+              </p>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 // ── Action Center modal ───────────────────────────────────────────────────────
 
 function DetailModal({ cas, onClose, onStatusChange }) {
@@ -634,21 +689,7 @@ function DetailModal({ cas, onClose, onStatusChange }) {
             {bindingDirs.length > 0 && (
               <div className="dm-compliance-block">
                 <p className="dm-block-label">What must be done</p>
-                <ul className="dm-compliance-list">
-                  {bindingDirs.map((d, i) => (
-                    <li key={i} className="dm-compliance-item">
-                      <span className="dm-bullet" aria-hidden="true">›</span>
-                      <span>
-                        {d.responsible_entity
-                          ? <><strong>{d.responsible_entity}</strong> — </>
-                          : null}
-                        {d.verbatim_text.length > 160
-                          ? d.verbatim_text.slice(0, 160).trimEnd() + '…'
-                          : d.verbatim_text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <AccordionList dirs={bindingDirs} />
               </div>
             )}
 
@@ -839,8 +880,10 @@ export default function Dashboard() {
       return matchSearch && matchStatus && matchInterim
     })
 
-    // Always sort interim to top first, then apply urgency sort within groups
+    // Always sort interim to top, completed to bottom, then urgency within groups
     return [...list].sort((a, b) => {
+      if (a.status === 'Completed' && b.status !== 'Completed') return 1
+      if (a.status !== 'Completed' && b.status === 'Completed') return -1
       const aInterim = a.case_metadata?.order_type === 'INTERIM' ? 0 : 1
       const bInterim = b.case_metadata?.order_type === 'INTERIM' ? 0 : 1
       if (aInterim !== bInterim) return aInterim - bInterim

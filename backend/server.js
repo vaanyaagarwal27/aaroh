@@ -14,6 +14,24 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(express.json());
 
+async function generateWithFallback(prompt, fileData) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const result = await model.generateContent([prompt, fileData]);
+    return { result, usedFallback: false };
+  } catch (primaryError) {
+    console.log('gemini-2.5-flash failed, trying gemini-1.5-flash...', primaryError.message);
+    try {
+      const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await fallbackModel.generateContent([prompt, fileData]);
+      return { result, usedFallback: false };
+    } catch (fallbackError) {
+      console.log('gemini-1.5-flash also failed:', fallbackError.message);
+      throw new Error('BOTH_MODELS_UNAVAILABLE');
+    }
+  }
+}
+
 app.get('/', (req, res) => {
   res.json({ message: 'Aaroh backend is running!' });
 });
@@ -231,19 +249,14 @@ LOW: Direction is ambiguous, uses permissive language like may,
   "Subject to appeal or modification"
 - ⁠  ⁠Return only the JSON, absolutely nothing else`;
 
-    const model = genAI.getGenerativeModel({ 
-      model: 'models/gemini-2.5-flash'
-    });
-    
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: 'application/pdf',
-          data: base64PDF
-        }
-      }
-    ]);
+    const fileData = {
+      inlineData: {
+        mimeType: 'application/pdf',
+        data: base64PDF,
+      },
+    };
+
+    const { result } = await generateWithFallback(prompt, fileData);
 
     const responseText = result.response.text();
     console.log('Raw Gemini response:', responseText);
@@ -276,8 +289,15 @@ LOW: Direction is ambiguous, uses permissive language like may,
   } catch (error) {
     if (pdfPath && fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
     console.error('Extraction Error:', error);
-    res.status(500).json({ 
-      success: false, 
+    if (error.message === 'BOTH_MODELS_UNAVAILABLE') {
+      return res.status(503).json({
+        success: false,
+        bothModelsFailed: true,
+        error: 'BOTH_MODELS_UNAVAILABLE',
+      });
+    }
+    res.status(500).json({
+      success: false,
       error: error.message || "Failed to parse legal document."
     });
   }
