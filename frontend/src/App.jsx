@@ -347,6 +347,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [view])
 
+  // Listen for navigation events dispatched by child components (e.g. Dashboard empty state)
+  useEffect(() => {
+    function onNavigate(e) { handleNavigate(e.detail) }
+    window.addEventListener('aaroh:navigate', onNavigate)
+    return () => window.removeEventListener('aaroh:navigate', onNavigate)
+  }, [])
+
   // Revoke object URL when leaving verify view to free memory
   useEffect(() => {
     return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl) }

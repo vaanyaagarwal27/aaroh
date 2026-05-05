@@ -83,24 +83,23 @@ function PdfBtn({ onClick }) {
 // ── Editable direction card ───────────────────────────────────────────────────
 
 function DirectionCard({ dir, index, onChange, onViewPdf }) {
-  const [editing,  setEditing]  = useState(false)
-  const [draft,    setDraft]    = useState(null)
-  const [reason,   setReason]   = useState('')
-  const [editedBy, setEditedBy] = useState('')
-  const [errors,   setErrors]   = useState({})
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(null)
+  const [reason,  setReason]  = useState('')
+  const [errors,  setErrors]  = useState({})
 
-  function startEdit() { setDraft({ ...dir }); setReason(''); setEditedBy(''); setErrors({}); setEditing(true) }
+  function startEdit() { setDraft({ ...dir }); setReason(''); setErrors({}); setEditing(true) }
 
-  function cancelEdit() { setDraft(null); setReason(''); setEditedBy(''); setErrors({}); setEditing(false) }
+  function cancelEdit() { setDraft(null); setReason(''); setErrors({}); setEditing(false) }
 
   function saveEdit() {
     const errs = {}
-    if (!reason.trim())   errs.reason   = 'Required'
-    if (!editedBy.trim()) errs.editedBy = 'Required'
+    if (!reason.trim()) errs.reason = 'Required'
     if (Object.keys(errs).length) { setErrors(errs); return }
 
-    const now       = new Date()
-    const editedAt  = now.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('aaroh_user')) } catch { return null } })()
+    const editedBy = currentUser?.name ?? 'Unknown'
+    const editedAt = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
 
     const changes = []
     if (dir.verbatim_text !== draft.verbatim_text)
@@ -114,16 +113,16 @@ function DirectionCard({ dir, index, onChange, onViewPdf }) {
 
     const editRecord = {
       field:          `Direction #${index + 1}`,
-      original_value: dir.category,
-      new_value:      draft.category,
+      original_value: dir.verbatim_text,
+      edited_value:   draft.verbatim_text,
       changes,
       reason:         reason.trim(),
-      edited_by:      editedBy.trim(),
+      edited_by:      editedBy,
       edited_at:      editedAt,
     }
 
     onChange(index, draft, editRecord)
-    setEditing(false); setDraft(null); setReason(''); setEditedBy(''); setErrors({})
+    setEditing(false); setDraft(null); setReason(''); setErrors({})
   }
 
   const current  = editing ? draft : dir
@@ -226,19 +225,6 @@ function DirectionCard({ dir, index, onChange, onViewPdf }) {
               placeholder="e.g. This is a mandatory directive, not just commentary"
             />
             {errors.reason && <span className="vdir-error-msg">{errors.reason}</span>}
-          </div>
-          <div className="vdir-audit-field">
-            <label className="vdir-audit-label">
-              Your name / designation <span className="vdir-required">*</span>
-            </label>
-            <input
-              className={`vdir-input ${errors.editedBy ? 'vdir-input--error' : ''}`}
-              type="text"
-              value={editedBy}
-              onChange={e => { setEditedBy(e.target.value); setErrors(er => ({ ...er, editedBy: '' })) }}
-              placeholder="e.g. Dy. Commissioner Sharma"
-            />
-            {errors.editedBy && <span className="vdir-error-msg">{errors.editedBy}</span>}
           </div>
         </div>
       )}

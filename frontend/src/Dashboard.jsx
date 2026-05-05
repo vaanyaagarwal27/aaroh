@@ -1,92 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import './Dashboard.css'
 
-// ── Sample data ───────────────────────────────────────────────────────────────
-
-const now = Date.now()
-const daysAgo = d => new Date(now - d * 86400000).toISOString()
-
-const SAMPLE_CASES = [
-  {
-    id: 'sample_1',
-    verified_at: daysAgo(2),
-    verification_stamp: 'Verified by System (Pre-login data) on 01 May 2026 at 10:30 AM',
-    case_metadata: {
-      case_number: 'WP/8234/2024',
-      court_name:  'High Court of Karnataka',
-      order_date:  '28 Apr 2026',
-      order_type:  'INTERIM',
-    },
-    directions: [
-      { verbatim_text: 'The State Government shall constitute an expert committee to review the environmental clearance granted for the project within the stipulated period.', category: 'BINDING_TO_GOVT', responsible_entity: 'State of Karnataka', original_timeline: '4 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Principal Secretary, Department of Forest and Environment shall file a compliance report before this Court.', category: 'BINDING_TO_GOVT', responsible_entity: 'Principal Secretary, Dept. of Forest & Environment', original_timeline: '6 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Karnataka State Pollution Control Board shall conduct an independent site inspection and submit findings.', category: 'BINDING_TO_GOVT', responsible_entity: 'Karnataka State Pollution Control Board', original_timeline: '8 weeks', confidence_score: 'MEDIUM' },
-      { verbatim_text: 'The petitioner shall file detailed objections with supporting documents within the prescribed period.', category: 'TO_PETITIONER', responsible_entity: 'Petitioner', original_timeline: '2 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Court observes that environmental concerns raised by the petitioner merit serious consideration by the authorities.', category: 'OBSERVATION', responsible_entity: null, original_timeline: null, confidence_score: 'MEDIUM' },
-    ],
-    summary: { total_directions: 5, binding_to_govt: 3, to_petitioner: 1, observations: 1 },
-    _default_status: 'Pending',
-  },
-  {
-    id: 'sample_2',
-    verified_at: daysAgo(5),
-    verification_stamp: 'Verified by System (Pre-login data) on 28 Apr 2026 at 03:15 PM',
-    case_metadata: {
-      case_number: 'WP/9871/2024',
-      court_name:  'High Court of Karnataka',
-      order_date:  '25 Apr 2026',
-      order_type:  'FINAL_DISPOSAL',
-    },
-    directions: [
-      { verbatim_text: 'The Revenue Department shall process and disburse the pending compensation amounts to the affected landowners.', category: 'BINDING_TO_GOVT', responsible_entity: 'Revenue Department, Government of Karnataka', original_timeline: '3 months', confidence_score: 'HIGH' },
-      { verbatim_text: 'The District Collector shall submit a compliance report detailing disbursement status to this Court.', category: 'BINDING_TO_GOVT', responsible_entity: 'District Collector, Bengaluru Rural', original_timeline: '4 months', confidence_score: 'HIGH' },
-      { verbatim_text: 'Petitioners shall provide updated bank account details to the Revenue Department within two weeks.', category: 'TO_PETITIONER', responsible_entity: 'Petitioners', original_timeline: '2 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Court notes the undue delay in compensation disbursement and expects strict compliance.', category: 'OBSERVATION', responsible_entity: null, original_timeline: null, confidence_score: 'HIGH' },
-    ],
-    summary: { total_directions: 4, binding_to_govt: 2, to_petitioner: 1, observations: 1 },
-    _default_status: 'In Progress',
-  },
-  {
-    id: 'sample_3',
-    verified_at: daysAgo(7),
-    verification_stamp: 'Verified by System (Pre-login data) on 26 Apr 2026 at 11:00 AM',
-    case_metadata: {
-      case_number: 'CRL.P/4521/2024',
-      court_name:  'High Court of Karnataka',
-      order_date:  '24 Apr 2026',
-      order_type:  'INTERIM',
-    },
-    directions: [
-      { verbatim_text: 'The State shall file its counter-affidavit responding to the allegations made in the writ petition.', category: 'BINDING_TO_GOVT', responsible_entity: 'Government of Karnataka', original_timeline: '3 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The petitioner shall serve a copy of the petition on all respondents and file proof of service.', category: 'TO_PETITIONER', responsible_entity: 'Petitioner', original_timeline: '1 week', confidence_score: 'HIGH' },
-      { verbatim_text: 'This Court observes that the matter involves substantial questions of law requiring detailed consideration.', category: 'OBSERVATION', responsible_entity: null, original_timeline: null, confidence_score: 'MEDIUM' },
-    ],
-    summary: { total_directions: 3, binding_to_govt: 1, to_petitioner: 1, observations: 1 },
-    _default_status: 'Completed',
-  },
-  {
-    id: 'sample_4',
-    verified_at: daysAgo(1),
-    verification_stamp: 'Verified by System (Pre-login data) on 02 May 2026 at 09:45 AM',
-    case_metadata: {
-      case_number: 'WP/12456/2024',
-      court_name:  'High Court of Karnataka',
-      order_date:  '01 May 2026',
-      order_type:  'INTERIM',
-    },
-    directions: [
-      { verbatim_text: 'The Urban Development Authority shall halt all construction activity at the disputed site with immediate effect.', category: 'BINDING_TO_GOVT', responsible_entity: 'Bruhat Bengaluru Mahanagara Palike', original_timeline: 'Immediate', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Principal Secretary, Urban Development Department shall personally appear before this Court at the next hearing.', category: 'BINDING_TO_GOVT', responsible_entity: 'Principal Secretary, Urban Development', original_timeline: 'Next hearing date', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Commissioner, BBMP shall file an action-taken report on encroachments identified in the survey.', category: 'BINDING_TO_GOVT', responsible_entity: 'Commissioner, BBMP', original_timeline: '6 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Disaster Management Authority shall assess structural safety of the adjacent buildings.', category: 'BINDING_TO_GOVT', responsible_entity: 'Karnataka State Disaster Management Authority', original_timeline: '4 weeks', confidence_score: 'MEDIUM' },
-      { verbatim_text: 'The petitioner shall submit a detailed survey map of the disputed land certified by a licensed surveyor.', category: 'TO_PETITIONER', responsible_entity: 'Petitioner', original_timeline: '3 weeks', confidence_score: 'HIGH' },
-      { verbatim_text: 'The Court expresses serious concern over unauthorized constructions and expects immediate corrective action.', category: 'OBSERVATION', responsible_entity: null, original_timeline: null, confidence_score: 'HIGH' },
-    ],
-    summary: { total_directions: 6, binding_to_govt: 4, to_petitioner: 1, observations: 1 },
-    _default_status: 'Pending',
-  },
-]
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = ['Pending', 'In Progress', 'Completed']
@@ -172,60 +86,21 @@ function formatDate(iso) {
   } catch { return '—' }
 }
 
-function loadRealCases() {
+function loadAllCases() {
   try { return JSON.parse(localStorage.getItem('approved_cases') ?? '[]') } catch { return [] }
 }
 
-function saveStatusForReal(id, status) {
+function saveStatus(id, status) {
   try {
-    const cases = loadRealCases()
-    const updated = cases.map(c => c.id === id ? { ...c, status } : c)
-    localStorage.setItem('approved_cases', JSON.stringify(updated))
+    const cases = loadAllCases()
+    localStorage.setItem('approved_cases', JSON.stringify(cases.map(c => c.id === id ? { ...c, status } : c)))
   } catch { /* ignore */ }
 }
 
-// Sample cases use a lightweight sidecar so we don't bloat the sample array
-function loadSampleStatuses() {
-  try { return JSON.parse(localStorage.getItem('aaroh_sample_statuses') ?? '{}') } catch { return {} }
-}
-function saveSampleStatus(id, status) {
+function deleteCase(id) {
   try {
-    const s = loadSampleStatuses()
-    s[id] = status
-    localStorage.setItem('aaroh_sample_statuses', JSON.stringify(s))
+    localStorage.setItem('approved_cases', JSON.stringify(loadAllCases().filter(c => c.id !== id)))
   } catch { /* ignore */ }
-}
-
-function loadDeletedSamples() {
-  try { return new Set(JSON.parse(localStorage.getItem('aaroh_deleted_samples') ?? '[]')) } catch { return new Set() }
-}
-function markSampleDeleted(id) {
-  try {
-    const deleted = loadDeletedSamples()
-    deleted.add(id)
-    localStorage.setItem('aaroh_deleted_samples', JSON.stringify([...deleted]))
-  } catch { /* ignore */ }
-}
-
-function deleteRealCase(id) {
-  try {
-    const cases = loadRealCases()
-    localStorage.setItem('approved_cases', JSON.stringify(cases.filter(c => c.id !== id)))
-  } catch { /* ignore */ }
-}
-
-function loadAllCases() {
-  const real           = loadRealCases()
-  const sampleStatuses = loadSampleStatuses()
-  const deletedSamples = loadDeletedSamples()
-  const samples = SAMPLE_CASES
-    .filter(c => !deletedSamples.has(c.id))
-    .map(c => ({
-      ...c,
-      status: sampleStatuses[c.id] ?? c._default_status ?? 'Pending',
-      _isSample: true,
-    }))
-  return [...samples, ...real]
 }
 
 // ── Detail modal helpers ──────────────────────────────────────────────────────
@@ -286,43 +161,45 @@ function saveSteps(id, checked) {
 // ── Edit Direction Card ───────────────────────────────────────────────────────
 
 function EditDirectionCard({ dir, index, onChange }) {
-  const [editing,  setEditing]  = useState(false)
-  const [draft,    setDraft]    = useState(null)
-  const [reason,   setReason]   = useState('')
-  const [editedBy, setEditedBy] = useState('')
-  const [errors,   setErrors]   = useState({})
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(null)
+  const [reason,  setReason]  = useState('')
+  const [errors,  setErrors]  = useState({})
 
-  function startEdit() { setDraft({ ...dir }); setReason(''); setEditedBy(''); setErrors({}); setEditing(true) }
-  function cancelEdit() { setDraft(null); setReason(''); setEditedBy(''); setErrors({}); setEditing(false) }
+  function startEdit() { setDraft({ ...dir }); setReason(''); setErrors({}); setEditing(true) }
+  function cancelEdit() { setDraft(null); setReason(''); setErrors({}); setEditing(false) }
 
   function saveEdit() {
     const errs = {}
-    if (!reason.trim())   errs.reason   = 'Required'
-    if (!editedBy.trim()) errs.editedBy = 'Required'
+    if (!reason.trim()) errs.reason = 'Required'
     if (Object.keys(errs).length) { setErrors(errs); return }
 
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('aaroh_user')) } catch { return null } })()
+    const editedBy = currentUser?.name ?? 'Unknown'
     const editedAt = new Date().toLocaleString('en-IN', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true,
     })
     const changes = []
     if (dir.verbatim_text !== draft.verbatim_text)
-      changes.push({ field: 'text',     original: dir.verbatim_text,    updated: draft.verbatim_text })
+      changes.push({ field: 'text',     original: dir.verbatim_text,      updated: draft.verbatim_text })
     if (dir.category !== draft.category)
-      changes.push({ field: 'category', original: dir.category,         updated: draft.category })
+      changes.push({ field: 'category', original: dir.category,           updated: draft.category })
     if ((dir.responsible_entity ?? '') !== (draft.responsible_entity ?? ''))
       changes.push({ field: 'entity',   original: dir.responsible_entity, updated: draft.responsible_entity })
     if ((dir.original_timeline ?? '') !== (draft.original_timeline ?? ''))
       changes.push({ field: 'timeline', original: dir.original_timeline,  updated: draft.original_timeline })
 
     onChange(index, draft, {
-      field:     `Direction #${index + 1}`,
+      field:         `Direction #${index + 1}`,
+      original_value: dir.verbatim_text,
+      edited_value:   draft.verbatim_text,
       changes,
-      reason:    reason.trim(),
-      edited_by: editedBy.trim(),
-      edited_at: editedAt,
+      reason:         reason.trim(),
+      edited_by:      editedBy,
+      edited_at:      editedAt,
     })
-    setEditing(false); setDraft(null); setReason(''); setEditedBy(''); setErrors({})
+    setEditing(false); setDraft(null); setReason(''); setErrors({})
   }
 
   const current = editing ? draft : dir
@@ -400,17 +277,6 @@ function EditDirectionCard({ dir, index, onChange }) {
               placeholder="Why are you making this change?"
             />
             {errors.reason && <span className="edc-error">{errors.reason}</span>}
-          </div>
-          <div className="edc-audit-field">
-            <label className="edc-audit-label">Your name / designation <span className="edc-required">*</span></label>
-            <input
-              className={`edc-input ${errors.editedBy ? 'edc-input--error' : ''}`}
-              type="text"
-              value={editedBy}
-              onChange={e => { setEditedBy(e.target.value); setErrors(er => ({ ...er, editedBy: '' })) }}
-              placeholder="e.g. Dy. Commissioner Sharma"
-            />
-            {errors.editedBy && <span className="edc-error">{errors.editedBy}</span>}
           </div>
         </div>
       )}
@@ -934,22 +800,17 @@ export default function Dashboard() {
   const [deleteToast,      setDeleteToast]      = useState(null)
 
   function handleStatusChange(id, newStatus) {
-    const target = cases.find(c => c.id === id)
-    if (target?._isSample) saveSampleStatus(id, newStatus)
-    else saveStatusForReal(id, newStatus)
+    saveStatus(id, newStatus)
     setCases(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c))
     setActionCase(prev => prev?.id === id ? { ...prev, status: newStatus } : prev)
   }
 
   function handleEditSave(updatedCase) {
-    // Persist to localStorage for real cases
-    if (!updatedCase._isSample) {
-      try {
-        const stored = loadRealCases()
-        const next   = stored.map(c => c.id === updatedCase.id ? updatedCase : c)
-        localStorage.setItem('approved_cases', JSON.stringify(next))
-      } catch { /* ignore */ }
-    }
+    try {
+      localStorage.setItem('approved_cases', JSON.stringify(
+        loadAllCases().map(c => c.id === updatedCase.id ? updatedCase : c)
+      ))
+    } catch { /* ignore */ }
     setCases(prev => prev.map(c => c.id === updatedCase.id ? updatedCase : c))
     setEditCase(null)
     setDeleteToast('Changes saved')
@@ -957,10 +818,8 @@ export default function Dashboard() {
   }
 
   function handleDelete(id) {
-    const target = cases.find(c => c.id === id)
-    if (!target || target._isSample) return
     if (!window.confirm('Are you sure you want to delete this case from the dashboard?')) return
-    deleteRealCase(id)
+    deleteCase(id)
     setCases(prev => prev.filter(c => c.id !== id))
     setDeleteToast('Case deleted')
     setTimeout(() => setDeleteToast(null), 3000)
@@ -1004,6 +863,21 @@ export default function Dashboard() {
       {deleteToast && <div className="delete-toast" role="status">{deleteToast}</div>}
 
       <div className="dashboard">
+
+        {/* Empty state — no cases at all */}
+        {cases.length === 0 && (
+          <div className="dash-empty-state">
+            <span className="dash-empty-icon">📁</span>
+            <h2 className="dash-empty-title">No cases verified yet</h2>
+            <p className="dash-empty-sub">Upload a judgment to get started</p>
+            <button className="dash-empty-btn" onClick={() => window.dispatchEvent(new CustomEvent('aaroh:navigate', { detail: 'upload' }))}>
+              Upload a Judgment
+            </button>
+          </div>
+        )}
+
+        {cases.length > 0 && <>
+
         {/* Page header */}
         <div className="dash-header">
           <div>
@@ -1165,16 +1039,14 @@ export default function Dashboard() {
                         >
                           Action Center
                         </button>
-                        {!cas._isSample && (
-                          <button
-                            className="delete-btn"
-                            onClick={() => handleDelete(cas.id)}
-                            aria-label={`Delete ${meta.case_number}`}
-                            title="Delete case"
-                          >
-                            🗑 Delete
-                          </button>
-                        )}
+                        <button
+                          className="delete-btn"
+                          onClick={() => handleDelete(cas.id)}
+                          aria-label={`Delete ${meta.case_number}`}
+                          title="Delete case"
+                        >
+                          🗑 Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1187,6 +1059,8 @@ export default function Dashboard() {
         <p className="dash-footer-note">
           Showing {filtered.length} of {cases.length} cases
         </p>
+
+        </> /* end cases.length > 0 */}
       </div>
     </>
   )

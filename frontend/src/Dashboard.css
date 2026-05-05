@@ -492,6 +492,32 @@
   font-size: 14px;
 }
 
+/* Full empty state (no cases at all) */
+.dash-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 40px;
+  text-align: center;
+}
+.dash-empty-icon  { font-size: 56px; margin-bottom: 20px; line-height: 1; }
+.dash-empty-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
+.dash-empty-sub   { font-size: 15px; color: var(--text-secondary); margin: 0 0 28px; }
+.dash-empty-btn {
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s;
+}
+.dash-empty-btn:hover { background: var(--navy-dark); }
+
 /* Footer note */
 .dash-footer-note {
   font-size: 12px;
