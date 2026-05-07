@@ -137,9 +137,8 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
-# Vite files
+# Vite files 
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-.DS_Store
 .DS_Store
