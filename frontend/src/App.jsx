@@ -7,6 +7,169 @@ import Footer from './Footer'
 import LoginPage from './LoginPage'
 import { findDemoExtraction, DEMO_EXTRACTIONS } from './data/demoExtractions'
 
+const SEED_CASES = [
+
+  {
+    id: "seed_001",
+    verified_at: "2026-05-01T09:00:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 01 May 2026 at 9:00 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "WA NO. 949/2026 (KLR-RES)",
+      order_date: "19-04-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "INTERIM"
+    },
+    directions: [
+      { verbatim_text: "The Tahsildar shall file a detailed affidavit regarding the encroachment within the next date of hearing.", category: "BINDING_TO_GOVT", responsible_entity: "Tahsildar (R3)", original_timeline: "next date of hearing", calculated_deadline_days: 18, confidence_score: "HIGH" },
+      { verbatim_text: "The jurisdictional police shall ensure no further encroachment takes place on the disputed land.", category: "BINDING_TO_GOVT", responsible_entity: "Jurisdictional Police", original_timeline: null, calculated_deadline_days: 7, confidence_score: "HIGH" },
+      { verbatim_text: "The matter is adjourned to 25.06.2026 for further hearing.", category: "OBSERVATION", responsible_entity: null, original_timeline: "25.06.2026", calculated_deadline_days: null, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 3, binding_to_govt: 2, to_petitioner: 0, observations: 1 }
+  },
+  {
+    id: "seed_002",
+    verified_at: "2026-05-02T10:30:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 02 May 2026 at 10:30 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "WP No. 8821/2026",
+      order_date: "28-04-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "INTERIM"
+    },
+    directions: [
+      { verbatim_text: "The Deputy Commissioner, Bengaluru Rural, shall submit a compliance report on the status of the land acquisition proceedings within four weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Deputy Commissioner, Bengaluru Rural", original_timeline: "within four weeks", calculated_deadline_days: 21, confidence_score: "HIGH" },
+      { verbatim_text: "No further construction shall be permitted on survey no. 114/2 until further orders.", category: "BINDING_TO_GOVT", responsible_entity: "Deputy Commissioner, Bengaluru Rural", original_timeline: "until further orders", calculated_deadline_days: 14, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 2, binding_to_govt: 2, to_petitioner: 0, observations: 0 }
+  },
+  {
+    id: "seed_003",
+    verified_at: "2026-05-02T14:00:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 02 May 2026 at 2:00 pm",
+    status: "In Progress",
+    case_metadata: {
+      case_number: "WP No. 12034/2025 (GM-RES)",
+      order_date: "15-04-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "FINAL_DISPOSAL"
+    },
+    directions: [
+      { verbatim_text: "The respondent authorities shall regularise the service of the petitioner within eight weeks from the date of this order.", category: "BINDING_TO_GOVT", responsible_entity: "Department of Forest, Ecology and Environment", original_timeline: "within eight weeks", calculated_deadline_days: 35, confidence_score: "HIGH" },
+      { verbatim_text: "All consequential service benefits shall be extended to the petitioner upon regularisation.", category: "BINDING_TO_GOVT", responsible_entity: "Department of Forest, Ecology and Environment", original_timeline: "upon regularisation", calculated_deadline_days: 35, confidence_score: "HIGH" },
+      { verbatim_text: "The writ petition is accordingly allowed.", category: "OBSERVATION", responsible_entity: null, original_timeline: null, calculated_deadline_days: null, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 3, binding_to_govt: 2, to_petitioner: 0, observations: 1 }
+  },
+  {
+    id: "seed_004",
+    verified_at: "2026-05-03T09:15:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 03 May 2026 at 9:15 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "CRL.P No. 3345/2026",
+      order_date: "30-04-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "INTERIM"
+    },
+    directions: [
+      { verbatim_text: "The Superintendent of Police, Hassan District, shall file a detailed status report on the investigation within two weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Superintendent of Police, Hassan", original_timeline: "within two weeks", calculated_deadline_days: 9, confidence_score: "HIGH" },
+      { verbatim_text: "The investigating officer shall not take any coercive action against the petitioner until further orders of this court.", category: "BINDING_TO_GOVT", responsible_entity: "Investigating Officer, Hassan Police", original_timeline: "until further orders", calculated_deadline_days: 9, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 2, binding_to_govt: 2, to_petitioner: 0, observations: 0 }
+  },
+  {
+    id: "seed_005",
+    verified_at: "2026-05-03T11:00:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 03 May 2026 at 11:00 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "WP No. 6712/2026 (S-RES)",
+      order_date: "02-05-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "FINAL_DISPOSAL"
+    },
+    directions: [
+      { verbatim_text: "The Director of Public Instruction shall ensure that the petitioner's promotion order is issued within six weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Director of Public Instruction, Karnataka", original_timeline: "within six weeks", calculated_deadline_days: 36, confidence_score: "HIGH" },
+      { verbatim_text: "Arrears of salary for the withheld period shall be calculated and disbursed within eight weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Director of Public Instruction, Karnataka", original_timeline: "within eight weeks", calculated_deadline_days: 50, confidence_score: "HIGH" },
+      { verbatim_text: "No adverse entry shall be made in the service record of the petitioner in connection with this dispute.", category: "BINDING_TO_GOVT", responsible_entity: "Appointing Authority", original_timeline: null, calculated_deadline_days: 30, confidence_score: "MEDIUM" }
+    ],
+    summary: { total_directions: 3, binding_to_govt: 3, to_petitioner: 0, observations: 0 }
+  },
+  {
+    id: "seed_006",
+    verified_at: "2026-05-04T08:45:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 04 May 2026 at 8:45 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "WRIT PETITION No. 4491/2026",
+      order_date: "01-05-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "INTERIM"
+    },
+    directions: [
+      { verbatim_text: "The Chief Engineer, PWD (Roads), shall submit a report on the current status of the road widening project on NH-75 within three weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Chief Engineer, PWD (Roads)", original_timeline: "within three weeks", calculated_deadline_days: 16, confidence_score: "HIGH" },
+      { verbatim_text: "The concerned authorities shall ensure that the displaced residents are provided with interim shelter as per the rehabilitation policy.", category: "BINDING_TO_GOVT", responsible_entity: "District Administration, Dakshina Kannada", original_timeline: null, calculated_deadline_days: 16, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 2, binding_to_govt: 2, to_petitioner: 0, observations: 0 }
+  },
+  {
+    id: "seed_007",
+    verified_at: "2026-05-04T15:30:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 04 May 2026 at 3:30 pm",
+    status: "Completed",
+    case_metadata: {
+      case_number: "WP No. 1209 of 2025 (L-RES)",
+      order_date: "23-07-2025",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "FINAL_DISPOSAL"
+    },
+    directions: [
+      { verbatim_text: "It is declared that the petitioner's age of superannuation is 60 years.", category: "OBSERVATION", responsible_entity: null, original_timeline: null, calculated_deadline_days: null, confidence_score: "HIGH" },
+      { verbatim_text: "The respondents shall not superannuate the petitioner treating the age of retirement as 58.", category: "BINDING_TO_GOVT", responsible_entity: "Central Silk Board (R1, R2, R3, R4)", original_timeline: null, calculated_deadline_days: 30, confidence_score: "HIGH" },
+      { verbatim_text: "The petitioner is entitled to continue in employment as Timescale Farm Workers under first respondent till the age of superannuation at 60.", category: "BINDING_TO_GOVT", responsible_entity: "Respondent No.1 (Central Silk Board)", original_timeline: "till age of superannuation at 60", calculated_deadline_days: 30, confidence_score: "HIGH" }
+    ],
+    edits: [
+      {
+        direction_index: 1,
+        edited_by: "Vaanya Agarwal",
+        edited_at: "04 May 2026, 3:32 pm",
+        original_value: "The respondents shall not superannuate the petitioner treating the age of retirement as 59.",
+        edited_value: "The respondents shall not superannuate the petitioner treating the age of retirement as 58.",
+        reason: "AI extracted 59 — verified against source PDF, correct age is 58"
+      }
+    ],
+    summary: { total_directions: 3, binding_to_govt: 2, to_petitioner: 0, observations: 1 }
+  },
+  {
+    id: "seed_008",
+    verified_at: "2026-05-05T10:00:00.000Z",
+    verified_by: "Vaanya Agarwal",
+    verification_stamp: "Verified by Vaanya Agarwal on 05 May 2026 at 10:00 am",
+    status: "Pending",
+    case_metadata: {
+      case_number: "FAO No. 86/2021",
+      order_date: "29-04-2026",
+      court_name: "High Court of Karnataka at Bengaluru",
+      order_type: "FINAL_DISPOSAL"
+    },
+    directions: [
+      { verbatim_text: "The Land Acquisition Officer shall disburse the enhanced compensation amount to the petitioner within twelve weeks.", category: "BINDING_TO_GOVT", responsible_entity: "Land Acquisition Officer, Mysuru", original_timeline: "within twelve weeks", calculated_deadline_days: 56, confidence_score: "HIGH" },
+      { verbatim_text: "Interest at the rate of 9% per annum shall be paid on the enhanced compensation from the date of dispossession.", category: "BINDING_TO_GOVT", responsible_entity: "Land Acquisition Officer, Mysuru", original_timeline: "from date of dispossession", calculated_deadline_days: 56, confidence_score: "HIGH" },
+      { verbatim_text: "The appeal is accordingly allowed in part.", category: "OBSERVATION", responsible_entity: null, original_timeline: null, calculated_deadline_days: null, confidence_score: "HIGH" }
+    ],
+    summary: { total_directions: 3, binding_to_govt: 2, to_petitioner: 0, observations: 1 }
+  }
+]
+
 function loadUser() {
   try { return JSON.parse(localStorage.getItem('aaroh_user')) ?? null } catch { return null }
 }
@@ -324,34 +487,10 @@ export default function App() {
   function handleLogin(userData) {
     localStorage.setItem('aaroh_user', JSON.stringify(userData))
     setUser(userData)
-
-    // Seed dashboard with demo cases if it's empty
-    try {
-      const existing = JSON.parse(localStorage.getItem('approved_cases') ?? '[]')
-      if (existing.length === 0) {
-        const seeded = DEMO_EXTRACTIONS.map((demo, i) => {
-          const { case_metadata, directions, summary } = demo.result.data
-          return {
-            id:                 `case_demo_${i + 1}`,
-            verified_at:        new Date().toISOString(),
-            verified_by:        'System (Demo)',
-            verification_stamp: `Pre-loaded demo case`,
-            case_metadata,
-            directions,
-            summary,
-            status:             'Pending',
-            edits:              [],
-            action_plan: {
-              compliance_deadline: '',
-              appeal_deadline:     '',
-              assigned_department: '',
-              priority:            'MEDIUM',
-            },
-          }
-        })
-        localStorage.setItem('approved_cases', JSON.stringify(seeded))
-      }
-    } catch { /* ignore */ }
+    
+    if (!localStorage.getItem('aaroh_cases') || JSON.parse(localStorage.getItem('aaroh_cases') || '[]').length < 8) {
+      localStorage.setItem('aaroh_cases', JSON.stringify(SEED_CASES))
+    }
 
     setView('upload')
   }
