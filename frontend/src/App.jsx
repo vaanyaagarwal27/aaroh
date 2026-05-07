@@ -488,8 +488,8 @@ export default function App() {
     localStorage.setItem('aaroh_user', JSON.stringify(userData))
     setUser(userData)
     
-    if (!localStorage.getItem('aaroh_cases') || JSON.parse(localStorage.getItem('aaroh_cases') || '[]').length < 8) {
-      localStorage.setItem('aaroh_cases', JSON.stringify(SEED_CASES))
+    if (!localStorage.getItem('approved_cases') || JSON.parse(localStorage.getItem('approved_cases') || '[]').length < 8) {
+      localStorage.setItem('approved_cases', JSON.stringify(SEED_CASES))
     }
 
     setView('upload')
